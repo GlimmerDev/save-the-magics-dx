@@ -43,6 +43,8 @@ void handle_click_save(const SDL_Point* const mouse_pos, Config* const config);
 
 void handle_click_mute_quit(const SDL_Point* mouse_pos, Config* const config);
 
+void handle_click_options(const SDL_Point* mouse_pos, Config* const config);
+
 void handle_click_game_loop(const SDL_Point* const mouse_pos, Config* const config, unsigned int* const upgrade_page, unsigned int* const princess_page);
 
 void handle_click_title(const SDL_Point* mouse_pos, Config* const config);

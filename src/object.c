@@ -10,7 +10,7 @@
 #include "include/object.h"
 #include "include/save.h"
 #include "include/upgrade_data.h"
-#ifdef __ANDROID__
+#ifndef __ANDROID__
 #include "include/logo_data.h"
 #endif
 
@@ -55,9 +55,9 @@ Button* init_buttons(GameState* state) {
 		"",									// Save slot 1
 		"",									// Save slot 2 
 		"",									// Save slot 3 
+		"Autosave Interval",				// Options - autosave interval
 		"Aspect Ratio",						// Options - aspect ratio
 		"Framerate",						// Options - FPS
-		"Autosave Interval",				// Options - autosave interval
 		"Import Classic Save",				// Options - import classic save
 		"Confirm",							// Options - confirm
 		"Magic Sources",					// Menu button - magic sources
@@ -85,11 +85,11 @@ Button* init_buttons(GameState* state) {
 		{screen_center_x()-200, 1*90+180, 400, 60}, // Save slot 1
 		{screen_center_x()-200, 2*90+180, 400, 60}, // Save slot 2
 		{screen_center_x()-200, 3*90+180, 400, 60}, // Save slot 3
-		{screen_center_x()-200, 120, 200, 60},      // Options - aspect ratio
-		{screen_center_x()-200, 1*90+120, 200, 60}, // Options - FPS
-		{screen_center_x()-200, 2*90+120, 200, 60}, // Options - autosave interval
-		{screen_center_x()-200, 3*90+120, 400, 60}, // Options - import classic save
-		{screen_center_x()-100, 4*90+120, 200, 60}, // Options - confirm
+		{screen_center_x()-200, 110, 200, 60},      // Options - autosave interval
+		{screen_center_x()-200, 1*90+110, 200, 60}, // Options - aspect ratio
+		{screen_center_x()-200, 2*90+110, 200, 60}, // Options - FPS
+		{screen_center_x()-200, 3*90+110, 400, 60}, // Options - import classic save
+		{screen_center_x()-100, 470, 200, 60},      // Options - confirm
 		{screen_center_x()-390, 272, 150, 38},      // Menu button - magic sources
 		{screen_center_x()-390+157, 272, 150, 38},  // Menu button - princesses
 		{screen_center_x()-390+157*2, 272, 150, 38},// Menu button - meditate
@@ -115,9 +115,9 @@ Button* init_buttons(GameState* state) {
 		B_PURPLE,                           // Save slot 1
 		B_PURPLE,                           // Save slot 2
 		B_PURPLE,                           // Save slot 3
+		B_PURPLE,                           // Options - autosave interval
 		B_MENU,                             // Options - aspect ratio
 		B_PINK,                             // Options - FPS
-		B_PURPLE,                           // Options - autosave interval
 		B_LIGHTBLUE,                        // Options - import classic save
 		B_GREEN,                            // Options - confirm
 		B_MENU,                             // Menu button - magic sources
@@ -145,9 +145,9 @@ Button* init_buttons(GameState* state) {
 		MENU_BUTTON_SND,                    // Save slot 1
 		MENU_BUTTON_SND,                    // Save slot 2
 		MENU_BUTTON_SND,                    // Save slot 3
+		MENU_BUTTON_SND,                    // Options - autosave interval
 		MENU_BUTTON_SND,                    // Options - aspect ratio
 		MENU_BUTTON_SND,                    // Options - FPS
-		MENU_BUTTON_SND,                    // Options - autosave interval
 		MENU_BUTTON_SND,                    // Options - import classic save
 		MENU_BUTTON_SND,                    // Options - confirm
 		MENU_BUTTON_SND,                    // Menu button - magic sources
@@ -175,9 +175,9 @@ Button* init_buttons(GameState* state) {
 		30,                                 // Save slot 1
 		30,                                 // Save slot 2
 		30,                                 // Save slot 3
+		24,                                 // Options - autosave interval
 		24,                                 // Options - aspect ratio
 		24,                                 // Options - FPS
-		24,                                 // Options - autosave interval
 		24,                                 // Options - import classic save
 		24,                                 // Options - confirm
 		20,                                 // Menu button - magic sources
@@ -205,9 +205,9 @@ Button* init_buttons(GameState* state) {
 		WHITE,                              // Save slot 1
 		WHITE,                              // Save slot 2
 		WHITE,                              // Save slot 3
+		WHITE,                              // Options - autosave interval
 		BLACK,                              // Options - aspect ratio
 		WHITE,                              // Options - FPS
-		WHITE,                              // Options - autosave interval
 		BLACK,                              // Options - import classic save
 		WHITE,                              // Options - confirm
 		BLACK,                              // Menu button - magic sources

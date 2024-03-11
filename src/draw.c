@@ -821,14 +821,18 @@ void draw_option_import(const Config* const config) {
 
 void draw_screen_options(Config* config) {
 	void (*draw_opt_funcs[4])(const Config* const) = {
+		draw_option_autosave,
 		draw_option_aspect,
 		draw_option_fps,
-		draw_option_autosave,
 		draw_option_import,
 	};
-	draw_text("Warning: The game will restart to apply any changed settings.", screen_center_x(), 70, FONT_RPG, 20, WHITE, config->renderer);
-	for (int i = 0; i < 4; ++i) {
-		draw_button(OPT_ASPECT_B+i);
+	
+#ifndef __ANDROID__
+	draw_text("Warning: Applying some setting changes will reload the game.", screen_center_x(), 70, FONT_RPG, 20, WHITE, config->renderer);
+#endif
+
+	for (int i = 0; i < NUM_OPTIONS; ++i) {
+		draw_button(OPT_AUTOSAVE_B+i);
 		draw_opt_funcs[i](config);
 	}
 	draw_button(OPT_CONFIRM_B);

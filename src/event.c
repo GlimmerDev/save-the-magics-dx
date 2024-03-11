@@ -98,7 +98,7 @@ void update_autosave_timer(Config* const config, int* const autosave_timer) {
 		return;
 	}
 	++(*autosave_timer);
-	int interval = AUTOSAVE_INTERVALS[config->autosave_interval];
+	int interval = AUTOSAVE_INTERVALS[config->autosave_interval]*config->state->FPS;
 	if ((*autosave_timer) > (interval*config->state->FPS)) {
 		*autosave_timer = 0;
 		save_game(config, 0);
@@ -155,6 +155,40 @@ void check_done_buttons(Config* const config, unsigned int* const upgrade_page, 
 				state->current_screen = SCREEN_OPTIONS;
 			}
 			break;
+		case SCREEN_OPTIONS:
+			bptr = get_button(OPT_CONFIRM_B);
+			if (done_button(bptr)) {
+				if (config->reload_requested) {
+					config->do_reload = true;
+				}
+				config->state->current_screen = SCREEN_TITLE;
+			}
+			// Autosave can be changed without reload
+			bptr = get_button(OPT_AUTOSAVE_B);
+			if (done_button(bptr)) {
+				++config->autosave_interval;
+				if (config->autosave_interval > 5) {
+					config->autosave_interval = 0;
+				}
+			}
+		#ifdef __MAGICSMOBILE__
+			break;
+		#else
+			bptr = get_button(OPT_ASPECT_B);
+			if (done_button(bptr)) {
+				config->reload_requested = true;
+			}
+			bptr = get_button(OPT_FPS_B);
+			if (done_button(bptr)) {
+				config->reload_requested = true;
+			}
+			// Import can be done without reload
+			bptr = get_button(OPT_IMPORT_B);
+			if (done_button(bptr)) {
+
+			}
+			break;
+		#endif
 		case SCREEN_SAVE:
 			if (state->current_menu >= MENU_SV_CNF_QUIT) {
 				bptr = get_button(SAVE_YES_B);
@@ -268,7 +302,7 @@ void check_unlock_menu_button(const int upgrade_offset, Config* const config) {
 			tab_to_unlock = 4;
 			break;
 	}
-	if (tab_to_unlock < 0) {
+	if (!tab_to_unlock) {
 		return;
 	}
 	Button* bptr = get_button(MENU_BUTTON_OFFSET+tab_to_unlock);
@@ -437,6 +471,20 @@ void handle_click_mute_quit(const SDL_Point* mouse_pos, Config* const config) {
 	}
 }
 
+void handle_click_options(const SDL_Point* mouse_pos, Config* const config) {
+	Button* bptr = NULL;
+	for (int i = 0; i < NUM_OPTIONS; ++i) {
+		bptr = get_button(OPT_AUTOSAVE_B+i);
+		if (clicked_button(bptr, mouse_pos)) {
+			trigger_button(bptr, config->sounds, config->state);
+		}
+	}
+	bptr = get_button(OPT_CONFIRM_B);
+	if (clicked_button(bptr, mouse_pos)) {
+		trigger_button(bptr, config->sounds, config->state);
+	}
+}
+
 void handle_click_game_loop(const SDL_Point* mouse_pos, Config* const config, unsigned int* const upgrade_page, unsigned int* const princess_page) {
 	handle_click_mute_quit(mouse_pos, config);
 	if (config->state->current_menu == MENU_MEDITATE) {
@@ -551,6 +599,8 @@ void handle_event_sdl(const SDL_Event event, SDL_Point* const mouse_pos, Config*
 				case SCREEN_TITLE:
 					handle_click_title(mouse_pos, config);
 					break;
+				case SCREEN_OPTIONS:
+					handle_click_options(mouse_pos, config);
 				case SCREEN_SAVE:
 					handle_click_save(mouse_pos, config);
 					break;

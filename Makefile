@@ -9,7 +9,7 @@ OBJ_NAME = magics
 
 # Windows
 ifeq ($(OS),Windows_NT)
-	INCLUDE_PATHS = -IC:\mingw_lib\include
+	INCLUDE_PATHS = -IC:\mingw_lib\include -IC:\mingw_lib\include\SDL2
 	LIBRARY_PATHS = -LC:\mingw_lib\lib
 
 	# -w suppresses all warnings

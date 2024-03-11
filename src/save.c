@@ -366,8 +366,8 @@ void load_save_json_buttons(json_t* save_data, Config* config) {
 }
 
 json_t* magics_load_json(const char* path) {
-#ifdef __ANDROID__
 	json_error_t error;
+#ifdef __ANDROID__
 	SDL_RWops* fp = SDL_RWFromFile(path, "r");
 	int len = SDL_RWseek(fp, 0, SEEK_END);
 	char* data_str = (char*)safe_malloc(len);

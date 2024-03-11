@@ -115,6 +115,9 @@ typedef struct Config {
 	double screen_scale;
 	
 	unsigned int autosave_interval;
+
+	bool reload_requested;
+	bool do_reload;
 	
 	SDL_Window* window;
 	SDL_Renderer* renderer;

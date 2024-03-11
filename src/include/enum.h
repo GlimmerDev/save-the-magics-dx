@@ -7,7 +7,13 @@
 #define FC_USE_SDL_GPU
 #define SDL_HINT_RENDER_SCALE_QUALITY 0
 
-#define DEBUG
+#if defined(__APPLE__) && defined(TARGET_OS_IPHONE)
+#define __IPHONE__
+#endif
+
+#if defined(__ANDROID__) || defined(__IPHONE__)
+#define __MAGICSMOBILE__
+#endif
 
 // SCREEN DIMENSIONS
 #define SCREEN_WIDTH_W 1067
@@ -95,6 +101,12 @@ typedef enum {
 #define MENU_BUTTON_OFFSET NUM_MISC_BUTTONS
 #define NUM_BUTTONS NUM_MISC_BUTTONS+NUM_MENU_BUTTONS
 
+#ifdef __MAGICSMOBILE__
+#define NUM_OPTIONS 1
+#else
+#define NUM_OPTIONS 4
+#endif
+
 typedef enum {
 	MAGIC_B,
 	NEXT_B,
@@ -114,9 +126,9 @@ typedef enum {
 	SAVE_1_B,
 	SAVE_2_B,
 	SAVE_3_B,
+	OPT_AUTOSAVE_B,
 	OPT_ASPECT_B,
 	OPT_FPS_B,
-	OPT_AUTOSAVE_B,
 	OPT_IMPORT_B,
 	OPT_CONFIRM_B
 } E_ButtonIndex;

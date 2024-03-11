@@ -121,6 +121,10 @@ Config* magics_do_reload(int screen_width, int screen_height, double fps, int au
 	return new_config;
 }
 
+bool check_do_reload(Config* config){
+	return (config->do_reload);
+}
+
 int SDL_main(int argc, char *argv[]) {
 	// Init SDL & SDL modules
 	LOG_I("Initializing SDL...\n");
@@ -180,9 +184,8 @@ int SDL_main(int argc, char *argv[]) {
 	LOG_I("Starting main loop.\n");
 	
 	while (true) {
-		if (!running) {
+		if (check_do_reload(config)) {
 			config = magics_do_reload(SCREEN_WIDTH_C, SCREEN_HEIGHT_C, 120.0, 5, &TIME_STEP, &MAX_ACCUMULATOR);
-			running = true;
 		}
 		//frame_start = SDL_GetTicks();
 		unsigned int curr_ticks = SDL_GetTicks();
