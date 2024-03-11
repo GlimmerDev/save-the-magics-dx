@@ -1,3 +1,6 @@
+####################
+## C FILES
+####################
 # Prerequisites
 *.d
 
@@ -50,3 +53,40 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+
+####################
+# ANDROID FILES
+####################
+# Gradle files
+android/.gradle/
+android/build/
+
+# Local configuration file (sdk path, etc)
+android/local.properties
+
+# Log/OS Files
+*.log
+
+# Android Studio generated files and folders
+android/captures/
+android/.externalNativeBuild/
+android/.cxx/
+*.apk
+android/output.json
+
+# IntelliJ
+*.iml
+android/.idea/
+android/misc.xml
+android/deploymentTargetDropDown.xml
+android/render.experimental.xml
+
+# Keystore files
+*.jks
+*.keystore
+
+# Google Services (e.g. APIs or Firebase)
+android/google-services.json
+
+# Android Profiling
+*.hprof
