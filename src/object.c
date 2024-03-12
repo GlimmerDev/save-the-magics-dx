@@ -32,8 +32,8 @@ const char* SOUND_FILENAMES[NUM_SOUNDS] = {
     "evil_ship.ogg"
 };
 
-Button* init_buttons(GameState* state) {
-	Button* buttons = safe_malloc(sizeof(Button)*(NUM_MISC_BUTTONS+NUM_MENU_BUTTONS));
+Button* init_buttons(const double fps, GameState* state) {
+	Button* buttons = (Button*)malloc(sizeof(Button)*(NUM_MISC_BUTTONS+NUM_MENU_BUTTONS));
 	if (!buttons) return NULL;
 	
 	const char* button_texts[NUM_MISC_BUTTONS+NUM_MENU_BUTTONS] = {
@@ -221,7 +221,7 @@ Button* init_buttons(GameState* state) {
         buttons[i].name = button_texts[i];
         buttons[i].color = button_colors[i];
         buttons[i].click_timer = 0;
-        buttons[i].click_length = state->FPS/12;
+        buttons[i].click_length = fps/12;
         buttons[i].state = STATE_BTN_IDLE;
         buttons[i].sound = button_sounds[i];
 		buttons[i].rect = button_rects[i];
@@ -240,7 +240,7 @@ Button* init_buttons(GameState* state) {
     }
 	
 	// buttons that require special parameters
-	buttons[MEDI_B].click_length = state->FPS;
+	buttons[MEDI_B].click_length = fps;
 	
 	for (int i = 0; i < 4; ++i) {
 		buttons[SAVE_0_B+i].hide_locked_text = true;
@@ -249,17 +249,17 @@ Button* init_buttons(GameState* state) {
 	return buttons;
 }
 
-Upgrade* init_upgrades(GameState* state) {
+Upgrade* init_upgrades(const double fps, GameState* state) {
 	int data_index;
 	
-	Upgrade* upgrades = safe_calloc(UPGRADES_END_OFFSET, sizeof(Upgrade));
+	Upgrade* upgrades = (Upgrade*)calloc(UPGRADES_END_OFFSET, sizeof(Upgrade));
 	if (!upgrades) return NULL;
 
     for (int i = 0; i < UPGRADES_END_OFFSET; ++i) {
     	data_index = i*NUM_UPGRADE_FIELDS;
 		// NAME;DESCRIPTION;MPS;MULT;COST;COLOR;EFFECT;TYPE;COOLDOWN
 		//   0       1       2    3   4    5      6      7   8
-		upgrades[i].button = safe_calloc(1, sizeof(Button));
+		upgrades[i].button = (Button*)calloc(1, sizeof(Button));
 		if (!upgrades[i].button) {
 			// free any already loaded buttons
 			for (int j = 0; j < i; ++j) {
@@ -275,7 +275,7 @@ Upgrade* init_upgrades(GameState* state) {
 			upgrades[i].button->sound = INCANT_SND;
 		}
 		upgrades[i].button->color = atoi(UPGRADE_DATA[data_index+5]);
-		upgrades[i].button->click_length = state->FPS / 12;
+		upgrades[i].button->click_length = fps / 12;
 		
 		upgrades[i].name = strdup(UPGRADE_DATA[data_index]);
 		upgrades[i].description = strdup(UPGRADE_DATA[data_index+1]);
@@ -284,7 +284,7 @@ Upgrade* init_upgrades(GameState* state) {
 		upgrades[i].cost = atoll(UPGRADE_DATA[data_index+4]);
 		upgrades[i].effect = atoi(UPGRADE_DATA[data_index+6]);
 		upgrades[i].upgrade_type = atoi(UPGRADE_DATA[data_index+7]);
-		upgrades[i].max_cooldown = atoi(UPGRADE_DATA[data_index+8]) * state->FPS;
+		upgrades[i].max_cooldown = atoi(UPGRADE_DATA[data_index+8]) * fps;
 		upgrades[i].cooldown = upgrades[i].max_cooldown;
 		// keep first upgrade, first princess unlocked
 		upgrades[i].button->locked = !((i == 0)|(i == PRINCESS_OFFSET));
@@ -294,46 +294,46 @@ Upgrade* init_upgrades(GameState* state) {
 	return upgrades;
 }
 
-GameState* init_state(double fps) {
-	GameState* new_state = safe_calloc(1, sizeof(GameState));
-	
-	new_state->FPS = fps;
+GameState* init_state(const double fps) {
+	GameState* new_state = (GameState*)calloc(1, sizeof(GameState));
+	if (!new_state) {
+		return NULL;
+	}
 	
 	new_state->upgrade_max = 50;
 	new_state->princess_max = 20;
 	new_state->magic_per_click = 1;
 	new_state->magic_multiplier = 1.0f;
 	new_state->meditate_multiplier = 1.0f;
-	new_state->meditate_timer = DEFAULT_MEDI_TIMER*new_state->FPS;
+	new_state->meditate_timer = DEFAULT_MEDI_TIMER*fps;
 	
 	#ifdef DEBUG
 		new_state->magic_count = 1000000000000000000.0;
-		new_state->meditate_cooldown = 5*new_state->FPS;
+		new_state->meditate_cooldown = 5*fps;
 	#else
 		new_state->magic_count = 0.0;
-		new_state->meditate_cooldown = DEFAULT_MEDI_COOLDOWN*new_state->FPS;
+		new_state->meditate_cooldown = DEFAULT_MEDI_COOLDOWN*fps;
 	#endif
 	
 	return new_state;
 }
 
 Mix_Chunk** init_sounds() {
-	LOG_I("Allocate sounds array\n");
-    Mix_Chunk** sounds = safe_calloc(NUM_SOUNDS, sizeof(Mix_Chunk*));
+	LOG_D("Allocate sounds array\n");
+    Mix_Chunk** sounds = (Mix_Chunk**)calloc(NUM_SOUNDS, sizeof(Mix_Chunk*));
     if (!sounds) return NULL;
 
-	char path_buf[512] = "";
+	char path_buf[MAX_PATH_LEN] = "";
 
-	LOG_I("Load sounds\n");
+	LOG_D("Load sounds\n");
     for (int i = 0; i < NUM_SOUNDS; i++) {
 		#ifdef __ANDROID__
 		android_load_asset_file(SOUND_FILENAMES[i]);
-		snprintf(path_buf, 512, "%s", SOUND_FILENAMES[i]);
+		snprintf(path_buf, MAX_PATH_LEN, "%s", SOUND_FILENAMES[i]);
 		#else
-		snprintf(path_buf, 512, "res/%s", SOUND_FILENAMES[i]);
+		snprintf(path_buf, MAX_PATH_LEN, "res/%s", SOUND_FILENAMES[i]);
 		#endif   
 		sounds[i] = Mix_LoadWAV(path_buf);    
-		LOG_I("Loaded\n"); 
         if (!sounds[i]) {
             LOG_E("Error: unable to load sound file '%s': %s\n", SOUND_FILENAMES[i], Mix_GetError());
 			// free any already loaded sounds
@@ -348,21 +348,24 @@ Mix_Chunk** init_sounds() {
 }
 
 SaveSlot* init_save_slots() {
-	SaveSlot* saves = safe_calloc(4, sizeof(SaveSlot));
+	SaveSlot* saves = (SaveSlot*)calloc(4, sizeof(SaveSlot));
 	if (!saves) return NULL;
 	
 	return saves;
 }
 
-EndState* init_end_state(GameState* state, SDL_Renderer* renderer) {
-	EndState* e = safe_calloc(1, sizeof(EndState));
+EndState* init_end_state(const double fps, GameState* state, SDL_Renderer* renderer) {
+	EndState* e = (EndState*)calloc(1, sizeof(EndState));
+	if (!e) {
+		return NULL;
+	}
 	
 	SDL_Texture* expl_tx1 = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, screen_width(), screen_height());
 	SDL_Texture* expl_tx2 = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, screen_width(), screen_height());
 	SDL_SetTextureBlendMode(expl_tx1, SDL_BLENDMODE_BLEND);
 	SDL_SetTextureBlendMode(expl_tx2, SDL_BLENDMODE_BLEND);
 	
-	e->explosion_delay = state->FPS*10;
+	e->explosion_delay = fps;
 	e->explosion_radius = 2.0f;
 	e->explosion_alpha = 255.0f;
 	e->ship_glow_alpha = 150.0f;
@@ -397,23 +400,34 @@ int set_window_icon(SDL_Window* window) {
 	return 0;
 }
 
-Config* init_magics_config(int screen_width, int screen_height, double fps, int autosave_interval) {
-	Config* config = safe_calloc(1, sizeof(Config));
+Config* init_magics_config(const E_AspectType aspect, const double fps, const int autosave_interval) {
+	Config* config = (Config*)calloc(1, sizeof(Config));
 	if (!config) return NULL;
-	
-#ifdef __ANDROID__
-	android_set_screen_dims(config);
+
+#ifdef __MAGICSMOBILE__
+	mobile_set_screen_dims(config);
 #else
-	config->screen_width = screen_width;
-	config->screen_height = screen_height;
 	config->screen_scale = 1.0;
+	config->aspect = aspect;
+	config->FPS = fps;
+	switch(aspect) {
+		case ASPECT_WIDE:
+			config->screen_width = SCREEN_WIDTH_W;
+			config->screen_height = SCREEN_HEIGHT_W;
+			break;
+		case ASPECT_CLASSIC:
+			config->screen_width = SCREEN_WIDTH_C;
+			config->screen_height = SCREEN_HEIGHT_C;
+			break;
+	}
 #endif
 	config->screen_center_x = config->screen_width/2;
 	config->screen_center_y = config->screen_height/2;
+
 	screen_center_set_cptr(config);
 	screen_dims_set_cptr(config);
 
-	LOG_I("Creating SDL window\n");
+	LOG_D("Creating SDL window\n");
 	config->window = SDL_CreateWindow(
 		"Save the Magics!!: Deluxe", // window title
         SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, // window pos
@@ -425,13 +439,13 @@ Config* init_magics_config(int screen_width, int screen_height, double fps, int 
 		SDL_Quit();
 		return NULL;
 	}
-	#ifndef __ANDROID__
+#ifndef __MAGICSMOBILE__
 	if (set_window_icon(config->window) < 0) {
 		return NULL;
 	}
-	#endif
+#endif
 
-	LOG_I("Creating renderer\n");
+	LOG_D("Creating renderer\n");
 	config->renderer = SDL_CreateRenderer(config->window, -1, SDL_RENDERER_ACCELERATED);
 	if (!config->renderer) {
 		LOG_E("Unable to create SDL renderer\n");
@@ -441,23 +455,23 @@ Config* init_magics_config(int screen_width, int screen_height, double fps, int 
     	return NULL;
 	}
 	
-	LOG_I("State init\n");
+	LOG_D("State init\n");
 	config->state = init_state(fps);
 	if (!config->state) {
 		LOG_E("Unable to init state\n");
 		free(config);
 		return NULL;
 	}
-	LOG_I("Upgrade init\n");
-	config->upgrades = init_upgrades(config->state);
+	LOG_D("Upgrade init\n");
+	config->upgrades = init_upgrades(fps, config->state);
 	if (!config->upgrades) {
 		LOG_E("Unable to init upgrades\n");
 		free(config->state);
 		free(config);
 		return NULL;
 	}
-	LOG_I("Button init\n");
-	config->buttons = init_buttons(config->state);
+	LOG_D("Button init\n");
+	config->buttons = init_buttons(fps, config->state);
 	if (!config->buttons) {
 		LOG_E("Unable to init buttons\n");
 		free(config->state);
@@ -465,7 +479,7 @@ Config* init_magics_config(int screen_width, int screen_height, double fps, int 
 		free(config);
 		return NULL;
 	}
-	LOG_I("Sound init\n");
+	LOG_D("Sound init\n");
 	config->sounds = init_sounds();
 	if (!config->sounds) {
 		LOG_E("Unable to init sounds from paths\n");
@@ -487,7 +501,7 @@ Config* init_magics_config(int screen_width, int screen_height, double fps, int 
 		return NULL;		
 	}
 	
-	config->ending_state = init_end_state(config->state, config->renderer);
+	config->ending_state = init_end_state(fps, config->state, config->renderer);
 	if (!config->ending_state) {
 		LOG_E("Unable to init ending state\n");
 		free(config->state);
@@ -496,20 +510,24 @@ Config* init_magics_config(int screen_width, int screen_height, double fps, int 
 		free(config->sounds);
 		free(config->saves);
 		free(config);
+		return NULL;
 	}
-	LOG_I("Init save paths\n");
-	#ifdef __ANDROID__
-	config->save_path = ".";
-	#else
-	config->save_path = create_save_path();
-	if (!config->save_path) {
-		LOG_E("Error: Unable to create save path. Defaulting to current working directory.\n");
-	}
-	#endif
-	char save_path_buf[512] = "";
+	LOG_D("Init save paths\n");
+	char save_path_buf[MAX_PATH_LEN] = "";
 	for (int i = 0; i < 4; ++i) {
-		snprintf(save_path_buf, 512, "%s/magics_save_%d.json", config->save_path, i);
-		config->saves[i].path = safe_malloc(strlen(save_path_buf));
+		snprintf(save_path_buf, MAX_PATH_LEN, "%s/magics_save_%d.json", get_save_path(), i);
+		config->saves[i].path = malloc(strlen(save_path_buf));
+		if (!(config->saves[i].path)) {
+			LOG_E("Unable to init save paths\n");
+			free(config->state);
+			free(config->upgrades);
+			free(config->buttons);
+			free(config->sounds);
+			free(config->saves);
+			free(config->ending_state);
+			free(config);
+			return NULL;
+		}
 		strcpy(config->saves[i].path, save_path_buf);
 	}
 	config->save_version = SAVE_VERSION;
@@ -557,7 +575,7 @@ Button* get_button_set_bptr(Button* bptr) {
 }
 
 void trigger_button(Button* bptr, Mix_Chunk** sounds, GameState* state) {
-	bptr->click_timer = bptr->click_length * state->FPS;
+	bptr->click_timer = bptr->click_length * get_fps();
 	bptr->state = STATE_BTN_CLICKED;
 	
 	if (bptr->sound != -1) {
@@ -600,10 +618,10 @@ void trigger_upgrade(Upgrade* upgrade, Mix_Chunk** sounds, GameState* state) {
 			state->magic_count *= upgrade->mult;
 			break;
 		case EFFECT_REDUCE_MEDI_COOLDOWN:
-			state->meditate_cooldown = state->FPS;
+			state->meditate_cooldown = get_fps();
 			break;
 		case EFFECT_MULT_MEDI_TIMER:
-			state->meditate_timer = DEFAULT_MEDI_TIMER * state->FPS * upgrade->mult;
+			state->meditate_timer = DEFAULT_MEDI_TIMER * get_fps() * upgrade->mult;
 			break;
 		case EFFECT_SET_MEDI_MULT:
 			state->meditate_multiplier = upgrade->mult;

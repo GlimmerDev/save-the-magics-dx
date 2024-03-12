@@ -147,7 +147,7 @@ json_t* create_save_json_upgrades(Config* config) {
 		json_array_append(j_upgrade_counts, json_integer(upgrades[i].cooldown));
 	}
 	
-	json_object_set(j_upgrades, "counts", j_upgrade_counts);
+	json_object_set_new(j_upgrades, "counts", j_upgrade_counts);
 	
 	// calculate unlocks
 	unsigned int upgrade_unlocked, princess_unlocked = 0;
@@ -165,8 +165,8 @@ json_t* create_save_json_upgrades(Config* config) {
 	princess_unlocked = i - PRINCESS_OFFSET;
 	i = 0;
 	
-	json_object_set(j_upgrades, "upgrade_unlocked", json_integer(upgrade_unlocked));
-	json_object_set(j_upgrades, "princess_unlocked", json_integer(princess_unlocked));
+	json_object_set_new(j_upgrades, "upgrade_unlocked", json_integer(upgrade_unlocked));
+	json_object_set_new(j_upgrades, "princess_unlocked", json_integer(princess_unlocked));
 	
 	return j_upgrades;
 }
@@ -179,17 +179,16 @@ json_t* create_save_json_state(Config* config) {
 	}
 	GameState* state = config->state;
 	
-	json_object_set(j_state, "is_muted", json_integer(state->is_muted));
-	json_object_set(j_state, "fps", json_real(state->FPS));
-	json_object_set(j_state, "magic_count", json_real(state->magic_count));
-	json_object_set(j_state, "magic_per_click", json_integer(state->magic_per_click));
-	json_object_set(j_state, "magic_per_second", json_integer(state->magic_per_second));
-	json_object_set(j_state, "magic_multiplier", json_real(state->magic_multiplier));
-	json_object_set(j_state, "meditate_cooldown", json_integer(state->meditate_cooldown));
-	json_object_set(j_state, "meditate_timer", json_integer(state->meditate_timer));
-	json_object_set(j_state, "upgrade_max", json_integer(state->upgrade_max));
-	json_object_set(j_state, "princess_max", json_integer(state->princess_max));	
-	json_object_set(j_state, "win_count", json_integer(state->win_count));
+	json_object_set_new(j_state, "is_muted", json_integer(state->is_muted));
+	json_object_set_new(j_state, "magic_count", json_real(state->magic_count));
+	json_object_set_new(j_state, "magic_per_click", json_integer(state->magic_per_click));
+	json_object_set_new(j_state, "magic_per_second", json_integer(state->magic_per_second));
+	json_object_set_new(j_state, "magic_multiplier", json_real(state->magic_multiplier));
+	json_object_set_new(j_state, "meditate_cooldown", json_integer(state->meditate_cooldown));
+	json_object_set_new(j_state, "meditate_timer", json_integer(state->meditate_timer));
+	json_object_set_new(j_state, "upgrade_max", json_integer(state->upgrade_max));
+	json_object_set_new(j_state, "princess_max", json_integer(state->princess_max));	
+	json_object_set_new(j_state, "win_count", json_integer(state->win_count));
 	return j_state;
 }
 
@@ -208,7 +207,7 @@ json_t* create_save_json_buttons(Config* config) {
 		++i;
 	}
 	int menu_unlocked = i - MENU_BUTTON_OFFSET;
-	json_object_set(j_buttons, "menu_button_unlocked", json_integer(menu_unlocked));
+	json_object_set_new(j_buttons, "menu_button_unlocked", json_integer(menu_unlocked));
 	
 	return j_buttons;
 }
@@ -227,34 +226,36 @@ json_t* create_save_json(Config* config) {
 		return NULL;
 	}
 	
-	json_object_set(j_root, "state", j_state);
-	json_object_set(j_root, "buttons", j_buttons);
-	json_object_set(j_root, "upgrades", j_upgrades);
+	json_object_set_new(j_root, "state", j_state);
+	json_object_set_new(j_root, "buttons", j_buttons);
+	json_object_set_new(j_root, "upgrades", j_upgrades);
 	
 	long timestamp = (long)time(NULL);
 	unsigned int magic_missile = calc_magic_missile(timestamp, config);
 	
-	json_object_set(j_root, "save_version", json_integer(config->save_version));
-	json_object_set(j_root, "last_saved", json_integer(timestamp));
-	json_object_set(j_root, "magic_missile", json_integer(magic_missile));
+	json_object_set_new(j_root, "save_version", json_integer(config->save_version));
+	json_object_set_new(j_root, "last_saved", json_integer(timestamp));
+	json_object_set_new(j_root, "magic_missile", json_integer(magic_missile));
 	
 	return j_root;
 }
 
+/*
+Dumps a json_t object into a file.
+Uses SDL file I/O functions instead of jansson to ensure cross-platform compatibility.
+*/
 int magics_dump_json(json_t* data, const char* path) {
-#ifdef __ANDROID__
 	char* data_str = json_dumps(data, JSON_ENSURE_ASCII|JSON_INDENT(4));
 	if (!data_str) return -1;
 	size_t len = strlen(data_str);
 	SDL_RWops* fp = SDL_RWFromFile(path, "w");
-	if (!fp) return -1;
+	if (!fp) {
+		return -1;
+	}
 	SDL_RWwrite(fp, data_str, len, 1);
 	SDL_RWclose(fp);
-	free (data_str);
+	free(data_str);
 	return 0;
-#else
-	return json_dump_file(data, path, JSON_INDENT(4));
-#endif
 }
 
 int save_game(Config* config, const unsigned short slot) {
@@ -267,15 +268,13 @@ int save_game(Config* config, const unsigned short slot) {
 		return -1;
 	}
 	
-	int result = magics_dump_json(save_data, config->saves[slot].path);
-	
-	if (result < 0) {
+	if (!magics_dump_json(save_data, config->saves[slot].path)) {
 		LOG_E("Error writing save file: %s\n", config->saves[slot].path);
 		json_decref(save_data);
 		return -1;
 	} else {
 		#ifdef DEBUG
-		LOG_I("Wrote save file to: %s\n", config->saves[slot].path);
+		LOG_D("Wrote save file to: %s\n", config->saves[slot].path);
 		#endif
 	}
 	
@@ -324,9 +323,6 @@ int load_save_json_upgrades(json_t* save_data, Config* config, const bool is_cla
 		upgrades[i].button->locked = ((i-PRINCESS_OFFSET) >= princess_unlocked);
 	}
 	
-	//json_decref(j_upgrade_counts);
-	//json_decref(j_upgrades);
-	
 	return 0;
 }
 
@@ -337,7 +333,6 @@ void load_save_json_state(json_t* save_data, Config* config) {
 	
 	state->is_muted = json_integer_value(json_object_get(j_state, "is_muted"));
 	event_update_mute(config);
-	state->FPS = json_real_value(json_object_get(j_state, "fps"));
 	// TODO: if FPS is different than the save's FPS, recalculate values as needed
 	// (for now, the FPS is always tied to the save file)
 	state->magic_count = json_real_value(json_object_get(j_state, "magic_count"));
@@ -350,7 +345,7 @@ void load_save_json_state(json_t* save_data, Config* config) {
 	state->princess_max = json_integer_value(json_object_get(j_state, "princess_max"));
 	state->win_count = json_integer_value(json_object_get(j_state, "win_count"));
 	
-	//json_decref(j_state);
+	json_decref(j_state);
 }
 
 void load_save_json_buttons(json_t* save_data, Config* config) {
@@ -362,62 +357,105 @@ void load_save_json_buttons(json_t* save_data, Config* config) {
 	for (int i = 0; i < 5; ++i) {
 		buttons[MENU_BUTTON_OFFSET+i].locked = (i >= menu_button_unlocked);
 	}
-	//json_decref(j_buttons);
+	json_decref(j_buttons);
 }
 
-json_t* magics_load_json(const char* path) {
-	json_error_t error;
-#ifdef __ANDROID__
+/*
+Loads a JSON file into a json_t object.
+Uses SDL file I/O functions instead of jansson to ensure cross-platform compatibility.
+*/
+json_t* magics_load_json(const char* path, json_error_t* error) {
 	SDL_RWops* fp = SDL_RWFromFile(path, "r");
 	int len = SDL_RWseek(fp, 0, SEEK_END);
-	char* data_str = (char*)safe_malloc(len);
+	SDL_RWseek(fp, 0, SEEK_SET);
+	char* data_str = (char*)safe_malloc(len+1);
+	data_str[len] = '\0';
 	SDL_RWread(fp, data_str, len, 1);
-	json_t* d = json_loads(data_str, 0, &error);
+	json_t* d = json_loads(data_str, 0, error);
 	free(data_str);
 	return d;
-#else
-	return json_load_file(path, 0, &error);
-#endif
 }
 
 json_t* load_save_json(const char* path) {	
 	json_error_t error;
-	json_t* save_data = json_load_file(path, 0, &error);
-	
+	json_t* save_data = magics_load_json(path, &error);
+	json_incref(save_data);
 	if (!save_data) {
 		LOG_E("Error creating save_data object for load\n");
-		return NULL;
+		return (json_t*)NULL;
 	}
 	return save_data;
 }
 
-char* create_save_path() {
-	char* home_dir = NULL;
 
-    #ifdef _WIN32
-    // Windows
-    home_dir = getenv("APPDATA");
-    #else
-    // Unix-like (Linux, macOS)
-    home_dir = getenv("HOME");
-    #endif
-	
-	int buf_size = strlen(home_dir)+512;
-	char* path_buf = safe_malloc(buf_size);
-	
-	snprintf(path_buf, buf_size, "%s%s", home_dir, "/.stm_dx");
-	int result = create_directory(path_buf);
-	if (result < 0) {
-		return NULL;
+char* get_home_path() {
+	#ifdef __MAGICSMOBILE__
+	return ".";
+	#else
+	static char home_path[MAX_PATH_LEN] = "";
+	if (strcmp(home_path, "") == 0) {
+		#ifdef _WIN32
+		snprintf(home_path, MAX_PATH_LEN, "%s", getenv("APPDATA"));
+		#else
+		// Unix-like (Linux, macOS)
+		snprintf(home_path, MAX_PATH_LEN, "%s", getenv("HOME"));
+		#endif
 	}
-	int len = strlen(path_buf);
-	snprintf(path_buf+len, buf_size-len, "%s", "/save");
-	result = create_directory(path_buf);
-		if (result < 0) {
-		return NULL;
+	return home_path;
+	#endif
+}
+
+char* get_base_path() {
+	#ifdef __MAGICSMOBILE__
+	return ".";
+	#else
+	static char base_path[MAX_PATH_LEN] = "";
+	if (strcmp(base_path, "") == 0) {
+		snprintf(base_path, MAX_PATH_LEN, "%s%s", get_home_path(), "/.stm_dx");
 	}
-	
-	return path_buf;
+	return base_path;
+	#endif
+}
+
+char* get_config_file_path() {
+	#ifdef __MAGICSMOBILE__
+	return "config.json";
+	#else
+	static char config_path[MAX_PATH_LEN] = "";
+	if (strcmp(config_path, "") == 0) {
+		snprintf(config_path, MAX_PATH_LEN, "%s%s", get_base_path(), "/config.json");
+	}
+	return config_path;
+	#endif
+}
+
+char* get_save_path() {
+	#ifdef __MAGICSMOBILE__
+	return ".";
+	#else
+	static char save_path[MAX_PATH_LEN] = "";
+	if (strcmp(save_path, "") == 0) {
+		snprintf(save_path, MAX_PATH_LEN, "%s%s", get_base_path(), "/save");
+	}
+	return save_path;
+	#endif
+}
+
+char* create_save_path() {
+	const char* config_path = get_base_path();
+	char* save_path = get_save_path();
+	if (!file_exists(config_path)) {
+		if (!create_directory(config_path)) {
+			return NULL;
+		}
+	}
+	if (!file_exists(save_path)) {
+		if (!create_directory(save_path)) {
+			return NULL;
+		}
+	}
+
+	return save_path;
 }
 
 void load_save_properties(Config* config, const unsigned short slot) {
@@ -442,8 +480,7 @@ void load_save_properties(Config* config, const unsigned short slot) {
 		config->buttons[SAVE_0_B+slot].color = B_SAVE_CLEAR;
 	}
 	
-	//if (j_state) json_decref(j_state);
-	//if (save_data) json_decref(save_data);
+	json_decref(save_data);
 }
 
 void load_save(Config* config, const unsigned short slot) {
@@ -484,7 +521,7 @@ void load_save(Config* config, const unsigned short slot) {
 			exit(ERR_MAGIC_MISSILE);
 		}
 	}
-	//json_decref(save_data);
+	json_decref(save_data);
 }
 
 void check_for_saves(Config* config) {
@@ -500,4 +537,55 @@ unsigned int calc_magic_missile(const long timestamp, const Config* const config
 	}
 	r ^= ((long)config->state->magic_count + (long)config->state->magic_per_second + timestamp);
 	return (unsigned int)(r % 69420);
+}
+
+Config* load_config_from_file() {
+	char* config_path = get_config_file_path();
+	json_error_t error;
+	json_t* j_config = magics_load_json(config_path, &error);
+	if (!j_config) {
+		LOG_E("Error creating j_config in load_config_from_file\n");
+		return NULL;
+	}
+	const unsigned int autosave_interval = json_integer_value(json_object_get(j_config, "autosave_interval"));
+	const double fps = json_real_value(json_object_get(j_config, "fps"));
+	const E_AspectType aspect = json_integer_value(json_object_get(j_config, "aspect"));
+	Config* config = init_magics_config(aspect, fps, autosave_interval);
+	if (!config) {
+		LOG_E("Error creating config in load_config_from_file\n");
+	}
+	return config;
+}
+
+int create_config_file(const unsigned int autosave_interval, const double fps, const E_AspectType aspect) {
+	json_t* j_config = json_object();
+	if (!j_config) {
+		LOG_E("Error creating j_config object for config file\n");
+		return -1;
+	}
+	json_object_set(j_config, "autosave_interval", json_integer(autosave_interval));
+	json_object_set(j_config, "aspect", json_integer(aspect));
+	json_object_set(j_config, "fps", json_real(fps));
+
+	char* config_path = get_config_file_path();
+	if (!magics_dump_json(j_config, config_path)) {
+		LOG_E("Error writing config file: %s\n", config_path);
+		json_decref(j_config);
+		return -1;
+	} else {
+		#ifdef DEBUG
+		LOG_D("Wrote config file to: %s\n", config_path);
+		#endif
+	}
+	
+	json_decref(j_config);
+	return 0;
+}
+
+int create_default_config_file() {
+	return create_config_file(DEFAULT_AUTOSAVE, DEFAULT_FPS, DEFAULT_ASPECT);
+}
+
+bool config_file_exists() {
+	return file_exists(get_config_file_path());
 }

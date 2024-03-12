@@ -4,6 +4,7 @@
 #include "include/event.h"
 #include "include/object.h"
 #include "include/save.h"
+#include "include/util.h"
 #include <SDL.h>
 
 extern const int AUTOSAVE_INTERVALS[];
@@ -19,25 +20,25 @@ void update_ending_timers(Config* const config) {
 
 	if (ending->explosion_delay < 1) {
 		if (ending->explosion_radius < 8000) {
-			ending->explosion_radius += (400.0f/config->state->FPS);
+			ending->explosion_radius += (400.0f/get_fps());
 		}
 		if (ending->explosion_alpha > 1) {
-			ending->explosion_alpha -= (22.5f/config->state->FPS);
+			ending->explosion_alpha -= (22.5f/get_fps());
 		}
-		if (ending->explosion_delay < (config->state->FPS * -15)) {
-			ending->explosion_delay = (18600/config->state->FPS);
+		if (ending->explosion_delay < (get_fps() * -15)) {
+			ending->explosion_delay = (18600/get_fps());
 			ending->explosion_alpha = 255;
 			ending->explosion_radius = 2;
 			config->state->current_menu = MENU_END_WIN2;
 		}
 	} else {
-		if (ending->explosion_delay == (4*config->state->FPS)-1) {
+		if (ending->explosion_delay == (4*get_fps())-1) {
 			Mix_PlayChannel(-1, config->sounds[END_SHOOT_SND], 0);
 		} else if (ending->explosion_delay == 2) {
 			Mix_PlayChannel(-1, config->sounds[END_EXPLODE_SND], 0);
 		}
 		if (ending->ship_glow_alpha > -150) {
-			ending->ship_glow_alpha -= (60/config->state->FPS);
+			ending->ship_glow_alpha -= (60/get_fps());
 		} else {
 			ending->ship_glow_alpha = 150;
 		}
@@ -49,7 +50,7 @@ void update_button_timers(Button* const buttons, Upgrade* const upgrades, GameSt
 	for (int i = 0; i < NUM_MISC_BUTTONS; ++i) {
 		if (buttons[i].state == STATE_BTN_IDLE) continue;
 		if (buttons[i].click_timer > 0) {
-			buttons[i].click_timer -= state->FPS;
+			buttons[i].click_timer -= get_fps();
 		} else {
 			buttons[i].state = STATE_BTN_IDLE;
 		}
@@ -57,7 +58,7 @@ void update_button_timers(Button* const buttons, Upgrade* const upgrades, GameSt
 	for (int i = 0; i < NUM_UPGRADES+NUM_PRINCESSES+NUM_INCANTATIONS; ++i) {
 		if (upgrades[i].button->state == STATE_BTN_IDLE) continue;
 		if (upgrades[i].button->click_timer > 0) {
-			upgrades[i].button->click_timer -= state->FPS;
+			upgrades[i].button->click_timer -= get_fps();
 		} else {
 			upgrades[i].button->state = STATE_BTN_IDLE;
 		}
@@ -87,7 +88,7 @@ void update_meditate_cooldown(GameState* const state, Mix_Chunk** const sounds) 
 void update_meditate_timer(GameState* const state) {
 	if (state->meditate_timer < 1) {
 		state->is_meditating = false;
-		state->meditate_timer = DEFAULT_MEDI_TIMER * state->FPS;
+		state->meditate_timer = DEFAULT_MEDI_TIMER * get_fps();
 		return;
 	}
 	--(state->meditate_timer);
@@ -98,8 +99,8 @@ void update_autosave_timer(Config* const config, int* const autosave_timer) {
 		return;
 	}
 	++(*autosave_timer);
-	int interval = AUTOSAVE_INTERVALS[config->autosave_interval]*config->state->FPS;
-	if ((*autosave_timer) > (interval*config->state->FPS)) {
+	int interval = AUTOSAVE_INTERVALS[config->autosave_interval]*get_fps();
+	if ((*autosave_timer) > (interval*get_fps())) {
 		*autosave_timer = 0;
 		save_game(config, 0);
 	}
@@ -158,14 +159,20 @@ void check_done_buttons(Config* const config, unsigned int* const upgrade_page, 
 		case SCREEN_OPTIONS:
 			bptr = get_button(OPT_CONFIRM_B);
 			if (done_button(bptr)) {
-				if (config->reload_requested) {
-					config->do_reload = true;
+				if (config->reload_state > RELOAD_STATE_NONE) {
+					create_config_file(config->aspect, config->FPS, config->autosave_interval);
+					if (config->reload_state == RELOAD_STATE_REQUESTED) {
+						++(config->reload_state);
+					} else {
+						config->reload_state = RELOAD_STATE_NONE;
+					}
 				}
 				config->state->current_screen = SCREEN_TITLE;
 			}
 			// Autosave can be changed without reload
 			bptr = get_button(OPT_AUTOSAVE_B);
 			if (done_button(bptr)) {
+				config->reload_state = RELOAD_STATE_WRITECFG;
 				++config->autosave_interval;
 				if (config->autosave_interval > 5) {
 					config->autosave_interval = 0;
@@ -176,11 +183,16 @@ void check_done_buttons(Config* const config, unsigned int* const upgrade_page, 
 		#else
 			bptr = get_button(OPT_ASPECT_B);
 			if (done_button(bptr)) {
-				config->reload_requested = true;
+				config->aspect = !config->aspect;
+				config->reload_state = RELOAD_STATE_REQUESTED;
 			}
 			bptr = get_button(OPT_FPS_B);
 			if (done_button(bptr)) {
-				config->reload_requested = true;
+				config->FPS *= 2;
+				if (config->FPS > 120.0) {
+					config->FPS = 30.0;
+				}
+				config->reload_state = RELOAD_STATE_REQUESTED;
 			}
 			// Import can be done without reload
 			bptr = get_button(OPT_IMPORT_B);
@@ -221,6 +233,7 @@ void check_done_buttons(Config* const config, unsigned int* const upgrade_page, 
 					} else if (config->saves[i].exists) {
 						state->current_menu = MENU_SV_CNF_OVERWR;
 					} else {
+						save_game(config, i);
 						*running = false;
 						return;
 					}
@@ -243,7 +256,7 @@ void check_done_buttons(Config* const config, unsigned int* const upgrade_page, 
 			}
 			bptr = get_button(START_MEDI_B);
 			if ( done_button(bptr) ) {
-				state->meditate_cooldown = DEFAULT_MEDI_COOLDOWN * state->FPS;
+				state->meditate_cooldown = DEFAULT_MEDI_COOLDOWN * get_fps();
 				state->is_meditating = true;
 			}
 			bptr = get_button(FACE_EVIL_B);
@@ -474,7 +487,7 @@ void handle_click_mute_quit(const SDL_Point* mouse_pos, Config* const config) {
 void handle_click_options(const SDL_Point* mouse_pos, Config* const config) {
 	Button* bptr = NULL;
 	for (int i = 0; i < NUM_OPTIONS; ++i) {
-		bptr = get_button(OPT_AUTOSAVE_B+i);
+		bptr = get_button(OPTIONS_OFFSET+i);
 		if (clicked_button(bptr, mouse_pos)) {
 			trigger_button(bptr, config->sounds, config->state);
 		}
@@ -601,6 +614,7 @@ void handle_event_sdl(const SDL_Event event, SDL_Point* const mouse_pos, Config*
 					break;
 				case SCREEN_OPTIONS:
 					handle_click_options(mouse_pos, config);
+					break;
 				case SCREEN_SAVE:
 					handle_click_save(mouse_pos, config);
 					break;

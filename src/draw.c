@@ -192,17 +192,17 @@ void SDL_RenderFillTriangle(SDL_Renderer* renderer, const E_ColorIndex color, in
 // *** DRAW-RELATED INIT FUNCTIONS ***
 
 int init_fonts(SDL_Renderer* renderer) {
-	FC_Font** fonts = safe_malloc(sizeof(FC_Font*) * NUM_PER_FONT * NUM_FONTS);
+	FC_Font** fonts = (FC_Font**)malloc(sizeof(FC_Font*) * NUM_PER_FONT * NUM_FONTS);
 	if (!fonts) return -1;
 
-	char path_buf[512];
+	char path_buf[MAX_PATH_LEN];
 
 	for (int i = 0; i < NUM_FONTS; ++i) {
 		#ifdef __ANDROID__
 		android_load_asset_file(FONT_FILENAMES[i]);
-		snprintf(path_buf, 512, "%s", FONT_FILENAMES[i]);
+		snprintf(path_buf, MAX_PATH_LEN, "%s", FONT_FILENAMES[i]);
 		#else
-		snprintf(path_buf, 512, "res/%s", FONT_FILENAMES[i]);
+		snprintf(path_buf, MAX_PATH_LEN, "res/%s", FONT_FILENAMES[i]);
 		#endif
 		for (int j = 0; j < NUM_PER_FONT; ++j) {
 			const int offset = i*NUM_PER_FONT + j;
@@ -335,7 +335,7 @@ void draw_starfield(SDL_Renderer* renderer) {
 
 void update_starfield(GameState* state) {
     for (int i = 0; i < NUM_STARS; ++i) {
-        BG_STARS[i].y += (BG_STARS[i].speed*3)/state->FPS; // Move star down (vertical scrolling)
+        BG_STARS[i].y += (BG_STARS[i].speed*3)/get_fps(); // Move star down (vertical scrolling)
         // Reset star to top of the screen if it moves off the bottom
         if (BG_STARS[i].y >= screen_height()) {
             BG_STARS[i].x = rand() % screen_width();
@@ -641,7 +641,7 @@ void draw_start_medi_button(Config* config) {
         draw_text("You will be unable to perform any other actions until you are finished.", 
 			screen_center_x(), bptr->centery-4-8, FONT_RPG, 16, WHITE, config->renderer);
 			
-		snprintf(str_buf, 256, "[Time left: %s seconds]", human_format(config->state->meditate_timer/config->state->FPS));
+		snprintf(str_buf, 256, "[Time left: %s seconds]", human_format(config->state->meditate_timer/get_fps()));
         draw_text(str_buf, screen_center_x(), bptr->centery+38-10, FONT_RPG, 20, WHITE, config->renderer);
 		
 	} else {
@@ -784,23 +784,19 @@ void draw_screen_title(Config* config) {
 	draw_button(OPTIONS_B);
 }
 
-bool is_widescreen(const Config* const config) {
-	return (config->screen_width == SCREEN_WIDTH_W);
-}
-
 void draw_option_aspect(const Config* const config) {
 	const char* aspect_strs[2] = {
-		"4:3 (Classic)",
-		"16:9 (Wide)"
+		"16:9 (Wide)",
+		"4:3 (Classic)"
 	};
 	
 	Button* bptr = get_button(OPT_ASPECT_B);
-	draw_text(aspect_strs[is_widescreen(config)], bptr->centerx+200, bptr->centery-15, FONT_RPG, 30, WHITE, config->renderer);
+	draw_text(aspect_strs[config->aspect], bptr->centerx+200, bptr->centery-15, FONT_RPG, 30, WHITE, config->renderer);
 }
 
 void draw_option_fps(const Config* const config) {
 	char str_buf[32];
-	snprintf(str_buf, 32, "%d FPS", (int)config->state->FPS);
+	snprintf(str_buf, 32, "%d FPS", (int)get_fps());
 	Button* bptr = get_button(OPT_FPS_B);
 	draw_text(str_buf, bptr->centerx+200, bptr->centery-15, FONT_RPG, 30, WHITE, config->renderer);
 	return;
@@ -827,12 +823,12 @@ void draw_screen_options(Config* config) {
 		draw_option_import,
 	};
 	
-#ifndef __ANDROID__
-	draw_text("Warning: Applying some setting changes will reload the game.", screen_center_x(), 70, FONT_RPG, 20, WHITE, config->renderer);
+#ifndef __MAGICSMOBILE__
+	draw_text("Warning: Some settings changes will reload the game.", screen_center_x(), 70, FONT_RPG, 20, WHITE, config->renderer);
 #endif
 
 	for (int i = 0; i < NUM_OPTIONS; ++i) {
-		draw_button(OPT_AUTOSAVE_B+i);
+		draw_button(OPTIONS_OFFSET+i);
 		draw_opt_funcs[i](config);
 	}
 	draw_button(OPT_CONFIRM_B);

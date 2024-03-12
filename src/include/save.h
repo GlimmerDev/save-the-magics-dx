@@ -34,8 +34,13 @@ int save_game(Config* config, const unsigned short slot);
 int load_save_json_upgrades(json_t* save_data, Config* config, const bool is_classic);
 void load_save_json_state(json_t* save_data, Config* config);
 void load_save_json_buttons(json_t* save_data, Config* config);
-json_t* magics_load_json(const char* path);
+json_t* magics_load_json(const char* path, json_error_t* error);
 json_t* load_save_json(const char* path);
+
+char* get_home_path();
+char* get_base_path();
+char* get_config_file_path();
+char* get_save_path();
 
 char* create_save_path();
 
@@ -45,5 +50,10 @@ void load_save(Config* config, const unsigned short slot);
 void check_for_saves(Config* config);
 
 unsigned int calc_magic_missile(const long timestamp, const Config* const config);
+
+Config* load_config_from_file();
+int create_config_file(const unsigned int autosave_interval, const double fps, const E_AspectType aspect);
+int create_default_config_file();
+bool config_file_exists();
 
 #endif

@@ -68,8 +68,6 @@ typedef struct GameState {
 	
 	bool is_meditating;
 	bool is_muted;
-	
-	double FPS;
 
 	unsigned short current_screen;
 	unsigned short current_menu;
@@ -104,7 +102,6 @@ typedef struct Config {
 	Mix_Chunk** sounds;
 	EndState* ending_state;
 	
-	char* save_path;
 	unsigned int save_version;
 	SaveSlot* saves;
 	
@@ -113,11 +110,12 @@ typedef struct Config {
 	unsigned int screen_center_x;
 	unsigned int screen_center_y;
 	double screen_scale;
+	E_AspectType aspect;
+	double FPS;
 	
 	unsigned int autosave_interval;
 
-	bool reload_requested;
-	bool do_reload;
+	E_ReloadState reload_state;
 	
 	SDL_Window* window;
 	SDL_Renderer* renderer;
@@ -125,20 +123,20 @@ typedef struct Config {
 
 
 
-Button* init_buttons(GameState* state);
+Button* init_buttons(const double fps, GameState* state);
 
-Upgrade* init_upgrades(GameState* state);
+Upgrade* init_upgrades(const double fps, GameState* state);
 
-GameState* init_state(double fps);
+GameState* init_state(const double fps);
 
 int init_sound_paths();
 Mix_Chunk** init_sounds();
 
-EndState* init_end_state(GameState* state, SDL_Renderer* renderer);
+EndState* init_end_state(const double fps, GameState* state, SDL_Renderer* renderer);
 
 int set_window_icon(SDL_Window* window);
 
-Config* init_magics_config(int screen_width, int screen_height, double fps, int autosave_interval);
+Config* init_magics_config(const E_AspectType aspect, const double fps, const int autosave_interval);
 
 int set_upgrade_rects(Upgrade* upgrades, const int n, const int start_offset);
 

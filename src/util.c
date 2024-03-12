@@ -5,7 +5,7 @@
 #include "include/enum.h"
 #include "include/util.h"
 
-// platform-dependent
+// Platform-dependent
 #ifdef _WIN32
 #include <windows.h>
 #include <io.h>
@@ -19,15 +19,21 @@
 #include <time.h>
 #endif
 
+/*
+Converts an integer frame count into a formatted time string.
+*/
 const char* frames_to_time_str(const unsigned int frames, const GameState* state) {
     static char buffer[10];
-    unsigned int total_seconds = frames / state->FPS;
+    unsigned int total_seconds = frames / get_fps();
     unsigned int minutes = total_seconds / 60;
     unsigned int seconds = total_seconds % 60;
     sprintf(buffer, "%d:%02d", minutes, seconds);
     return buffer;
 }
 
+/*
+Converts an epoch timestamp into a formatted time string.
+*/
 const char* time_to_time_str(const time_t* const timestamp) {
 	static char buf[128];
 	struct tm* tm_struct = localtime(timestamp);
@@ -35,6 +41,10 @@ const char* time_to_time_str(const time_t* const timestamp) {
 	return buf;
 }
 
+/*
+"Safe" version of calloc that will exit the program if it fails.
+This should NOT be used until the config pointers are registered, otherwise some pointers may not be freed on exit.
+*/
 void* safe_calloc(size_t nmemb, size_t size) {
 	void* ptr = calloc(nmemb, size);
 	if (!ptr) {
@@ -44,6 +54,10 @@ void* safe_calloc(size_t nmemb, size_t size) {
 	return ptr;
 }
 
+/*
+"Safe" version of malloc that will exit the program if it fails.
+This should NOT be used until the config pointers are registered, otherwise some pointers may not be freed on exit.
+*/
 void* safe_malloc(size_t size) {
 	void* ptr = malloc(size);
 	if (!ptr) {
@@ -97,14 +111,17 @@ int create_directory(const char* path) {
     #ifdef _WIN32
     if (!CreateDirectory(path, NULL)) {
         if (GetLastError() != ERROR_ALREADY_EXISTS) {
+			LOG_E("Error creating directory: %s", path);
             return -1; // Failure
         }
+		LOG_W("Directory exists: %s", path);
+		return 0;
     }
     #else
     struct stat st = {0};
     if (stat(path, &st) == -1) {
         if (mkdir(path, 0777) == -1) {
-            perror("Error creating directory");
+            LOG_E("Error creating directory: %s", path);
             return -1;
         }
     }
@@ -171,8 +188,58 @@ int screen_center_y() {
 	return _scr_center(true, NULL, false);
 }
 
+double _get_fps(Config* const cptr, bool set_cptr) {
+	static Config* config = NULL;
+	if (set_cptr) {
+		config = cptr;
+		return 0.0;
+	} 
+	else if (!config) {
+		return NAN;
+	}
+	return config->FPS;
+}
+
+double get_fps_set_cptr(Config* const cptr) {
+	return _get_fps(cptr, true);
+}
+
+double get_fps() {
+	return _get_fps(NULL, false);
+}
+
+// ***************************
+// * SHARED MOBILE FUNCTIONS *
+// *************************** 
+#ifdef __MAGICSMOBILE__
+/*
+Determines the dimensions and scale ratio when running on mobile.
+*/
+int mobile_set_screen_dims(Config* config){
+	SDL_DisplayMode m;
+	int res = SDL_GetCurrentDisplayMode(0, &m);
+	if (res < 0) {
+		LOG_E("Error getting display mode");
+		return -1;
+	}
+	unsigned int ratio = floor(m.h/600);
+	LOG_D("ScreenInfo: w: %d , h: %d, r: %d", m.w, m.h, ratio);
+	config->screen_width = m.w / ratio;
+	config->screen_height = m.h / ratio;
+	config->screen_scale = (double)ratio;
+
+	return 0;
+}
+#endif
+
+// ANDROID-RELATED FUNCTIONS
 #ifdef __ANDROID__
+
 AAssetManager* ASSET_MGR = NULL;
+
+/*
+Obtains the AAssetManager from Java. Needed for accessing files in the app assets.
+*/
 void android_set_asset_mgr() {
 	JNIEnv* env = (JNIEnv*)SDL_AndroidGetJNIEnv();
 	jobject activity = (jobject)SDL_AndroidGetActivity();
@@ -185,52 +252,45 @@ void android_set_asset_mgr() {
 	(*env)->DeleteLocalRef(env, activity);
 	(*env)->DeleteLocalRef(env, clazz);
 }
+
+/*
+Frees the AAssetManager pointer.
+*/
 void android_free_asset_mgr() {
-	if (ASSET_MGR) {
-		free(ASSET_MGR);
-	}
+	if (ASSET_MGR) free(ASSET_MGR);
 }
-void android_load_asset_file(const char* filename) {
+
+/*
+Loads "filename" from the Android app assets, then dumps it to the internal storage.
+*/
+int android_load_asset_file(const char* filename) {
 	if (!ASSET_MGR) {
+		LOG_D("Getting asset manager...\n");
 		android_set_asset_mgr();
 	}
 	
 	AAsset* file = AAssetManager_open(ASSET_MGR, filename, AASSET_MODE_BUFFER);
-	// Get the file length
 	size_t file_len = AAsset_getLength(file);
 
-	LOG_I("%d", file_len);
+	LOG_D("Asset file \"%s\" len: %d", filename, file_len);
 
-	// Allocate memory to read your file
-	char* content = (char*)safe_malloc(file_len);
+	// Allocate memory to read file
+	char* content = (char*)safe_malloc(file_len+1);
+	content[file_len] = '\0';
 
-	// Read your file
+	// Read file
 	AAsset_read(file, content, file_len);
 
 	SDL_RWops* fp = SDL_RWFromFile(filename, "w");
 	if (!fp) {
-		LOG_E("Error opening output in load_asset_file\n");
-		return;
+		LOG_E("Error opening output fp in load_asset_file\n");
+		return -1;
 	}
 	SDL_RWwrite(fp, content, file_len, 1);
 	SDL_RWclose(fp);
 
-	// Free the memoery you allocated earlier
+	// Free the memory allocated earlier
 	free(content);
-}
-int android_set_screen_dims(Config* config){
-	SDL_DisplayMode m;
-	int res = SDL_GetCurrentDisplayMode(0, &m);
-	if (res < 0) {
-		LOG_E("Error getting display mode");
-		return -1;
-	}
-	unsigned int ratio = floor(m.h/600);
-	LOG_I("ScreenInfo: w: %d , h: %d, r: %d", m.w, m.h, ratio);
-	config->screen_width = m.w / ratio;
-	config->screen_height = m.h / ratio;
-	config->screen_scale = (double)ratio;
-
 	return 0;
 }
 #endif

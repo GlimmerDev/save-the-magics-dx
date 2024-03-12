@@ -41,11 +41,11 @@ void _magics_cleanup(Config* const cptr, bool set_cptr, bool quit_sdl) {
 	}
 
 	// free state
-	free(config->state);
+	if (config->state) free(config->state);
 	
 	// free sounds
 	for (int i = 0; i < NUM_SOUNDS; ++i) {
-		Mix_FreeChunk(config->sounds[i]);
+		if (config->sounds[i]) Mix_FreeChunk(config->sounds[i]);
 	}
 	free(config->sounds);
 	
@@ -53,30 +53,29 @@ void _magics_cleanup(Config* const cptr, bool set_cptr, bool quit_sdl) {
 	magics_font_cleanup();
 
 	// free buttons
-	free(config->buttons);
+	if (config->buttons) free(config->buttons);
 	
 	// free upgrades
 	for (int i = 0; i < NUM_UPGRADES; ++i) {
-		free(config->upgrades[i].button);
+		if (config->upgrades[i].button) free(config->upgrades[i].button);
 	}
-	free(config->upgrades);
+	if (config->upgrades) free(config->upgrades);
 	
 	// free shape vertices
 	bg_vertex_cleanup();
 	
 	// free save data
-	if (config->save_path) {
-		free(config->save_path);
-	}
 	for (int i = 0; i < 4; ++i) {
-		free(config->saves[i].path);
+		if (config->saves[i].path) {
+			free(config->saves[i].path);
+		}
 	}
-	free(config->saves);
+	if (config->saves) free(config->saves);
 	
 	// free ending state
 	SDL_DestroyTexture(config->ending_state->expl_tx1);
 	SDL_DestroyTexture(config->ending_state->expl_tx2);
-	free(config->ending_state);
+	if (config->ending_state) free(config->ending_state);
 
 	// free config
 	free(config);
@@ -100,34 +99,36 @@ void magics_register_config(Config* const cptr) {
 	magics_cleanup_set_cptr(cptr);
 	get_button_set_bptr(cptr->buttons);
 	draw_button_set_ptrs(cptr);
+	get_fps_set_cptr(cptr);
 }
 
-Config* magics_do_reload(int screen_width, int screen_height, double fps, int autosave_interval, float* time_step, float* max_accumulator) {
+Config* magics_do_reload(E_AspectType aspect, double fps, int autosave_interval, float* time_step, float* max_accumulator) {
 	_magics_cleanup(NULL, false, false);
 	
-	Config* new_config = init_magics_config(screen_width, screen_height, fps, autosave_interval);
+	Config* new_config = init_magics_config(aspect, fps, autosave_interval);
 	if (!new_config) {
+		LOG_E("Error: could not create reloaded config\n");
 		return NULL;
 	}
-	
+
 	magics_register_config(new_config);
     
 	init_fonts(new_config->renderer);
 	init_shapes(new_config);
 	
-	(*time_step) = 1.0f / new_config->state->FPS;
-	(*max_accumulator) = (*time_step) * 4;
+	(*time_step) = 1.0f / new_config->FPS;
+	(*max_accumulator) = (*time_step) * MAX_LAG_FRAMES;
 	
 	return new_config;
 }
 
 bool check_do_reload(Config* config){
-	return (config->do_reload);
+	return (config->reload_state == RELOAD_STATE_EXECUTE);
 }
 
 int SDL_main(int argc, char *argv[]) {
 	// Init SDL & SDL modules
-	LOG_I("Initializing SDL...\n");
+	LOG_D("Initializing SDL...\n");
 	SDL_Init(SDL_INIT_VIDEO);
     Mix_Init(MIX_INIT_OGG);
 	if( Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 512) == -1 ) { 
@@ -138,24 +139,26 @@ int SDL_main(int argc, char *argv[]) {
 
 	// Seed random
 	srand(time(NULL));
-	
-	LOG_I("Initializing config...\n");
-	// Init config
-	Config* config = init_magics_config(SCREEN_WIDTH_W, SCREEN_HEIGHT_W, DEFAULT_FPS, DEFAULT_AUTOSAVE);
+
+	LOG_D("Checking config file...\n");
+	if (!config_file_exists()) {
+		create_default_config_file();
+	}
+	LOG_D("Initializing config...\n");
+	Config* config = load_config_from_file();
 	if (!config) {
 		LOG_E("Error: could not create magics config\n");
     	return -1;
 	}
 	
-	LOG_I("Registering config ptr in convenience functions...\n");
-	// Register config for convenience functions, & set exit function
+	LOG_D("Registering config ptr in convenience functions...\n");
 	magics_register_config(config);
 	atexit(magics_cleanup);
 	
-	LOG_I("Initializing fonts...\n");
+	LOG_D("Initializing fonts...\n");
 	init_fonts(config->renderer);
 	
-	LOG_I("Initializing shapes...\n");
+	LOG_D("Initializing shapes...\n");
 	init_shapes(config);
 
 	
@@ -164,10 +167,10 @@ int SDL_main(int argc, char *argv[]) {
 	unsigned int fps_prev_ticks = prev_ticks;
 	float accumulator = 0.0f;
 	int avg_fps = 0;
-	float TIME_STEP = 1.0f / config->state->FPS;
+	float TIME_STEP = 1.0f / get_fps();
 	int frame_count = 0;
 	char fps_buf[16] = "0";
-	float MAX_ACCUMULATOR = TIME_STEP * 4; // Maximum lag frames
+	float MAX_ACCUMULATOR = TIME_STEP * MAX_LAG_FRAMES;
 
 	const char* version_string = "v" VERSION_NUMBER " by @glimmer@chaosfem.tw";
 	
@@ -181,20 +184,21 @@ int SDL_main(int argc, char *argv[]) {
 	
 	bool running = true;
 
-	LOG_I("Starting main loop.\n");
+	LOG_D("Starting main loop.\n");
 	
-	while (true) {
+	while (running) {
 		if (check_do_reload(config)) {
-			config = magics_do_reload(SCREEN_WIDTH_C, SCREEN_HEIGHT_C, 120.0, 5, &TIME_STEP, &MAX_ACCUMULATOR);
+			config = magics_do_reload(config->aspect, get_fps(), config->autosave_interval, 
+										&TIME_STEP, &MAX_ACCUMULATOR);
 		}
-		//frame_start = SDL_GetTicks();
+
 		unsigned int curr_ticks = SDL_GetTicks();
 		unsigned int frame_ticks = curr_ticks - prev_ticks;
 		prev_ticks = curr_ticks;
 		
 		float delta_time = frame_ticks / 1000.0f;
 		
-		// limit lag frames to maximum
+		// limit lag frames
 		if (delta_time > MAX_ACCUMULATOR) {
 			delta_time = MAX_ACCUMULATOR;
 		}
@@ -202,7 +206,9 @@ int SDL_main(int argc, char *argv[]) {
 		accumulator += delta_time;	
 		
 		while (accumulator >= TIME_STEP) {
+			// *********************
 			// *** HANDLE EVENTS ***
+			// *********************
 			
 			// handle SDL events
 			SDL_Event event;
@@ -214,18 +220,20 @@ int SDL_main(int argc, char *argv[]) {
 			update_button_timers(config->buttons, config->upgrades, config->state);
 			update_ending_timers(config);
 			if (config->state->current_screen == SCREEN_GAME_LOOP) {
-				update_incantation_timers(config->upgrades, config->sounds);
+				if (!(get_button(MENU_INCANT_B)->locked)) {
+					update_incantation_timers(config->upgrades, config->sounds);
+				}
 				update_autosave_timer(config, &autosave_timer);
 				// meditation-related 
 				if (config->state->is_meditating) {
 					update_meditate_timer(config->state);
 					if (config->state->meditate_multiplier > 1.0) {
-						config->state->meditate_multiplier *= (1.0 - ((0.0005 * 30) / config->state->FPS));
+						config->state->meditate_multiplier *= (1.0 - ((0.0005 * 30) / get_fps()));
 					}
-				} else {
+				} else if (!(get_button(MENU_MEDI_B))->locked) {
 					update_meditate_cooldown(config->state, config->sounds);
 					if (config->state->meditate_multiplier > 1.0) {
-						config->state->meditate_multiplier *= (1.0 - ((0.005 * 30) / config->state->FPS));
+						config->state->meditate_multiplier *= (1.0 - ((0.005 * 30) / get_fps()));
 					}
 				}
 				
@@ -241,7 +249,7 @@ int SDL_main(int argc, char *argv[]) {
 				
 				// update magics count
 				config->state->magic_count += (config->state->magic_per_second * 
-											config->state->magic_multiplier * config->state->meditate_multiplier / config->state->FPS);
+											config->state->magic_multiplier * config->state->meditate_multiplier / get_fps());
 			}
 			
 			// update starfield
@@ -250,9 +258,13 @@ int SDL_main(int argc, char *argv[]) {
 			// check buttons that are ready to trigger
 			check_done_buttons(config, &upgrade_page, &princess_page, &running);
 			
+			// *************************
 			// *** END HANDLE EVENTS ***
+			// *************************
 			
+			// *************************
 			// *** START DRAW ***
+			// *************************
 		
 			clear_screen(config->renderer, BACKGROUND);
 			
@@ -279,7 +291,9 @@ int SDL_main(int argc, char *argv[]) {
 					break;
 			}
 			
+			// ****************
 			// *** END DRAW ***
+			// ****************
 			
 			// Update the screen
 			SDL_RenderPresent(config->renderer);

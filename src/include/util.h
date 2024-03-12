@@ -4,6 +4,11 @@
 #include <stdbool.h>
 #include "object.h"
 
+// MOBILE (SHARED)
+#ifdef __MAGICSMOBILE__
+int android_set_screen_dims(Config* config);
+#endif
+
 // ANDROID
 #ifdef __ANDROID__
 #include <android/log.h>
@@ -17,18 +22,19 @@
 #define  LOG_D(...)  __android_log_print(ANDROID_LOG_DEBUG,LOG_TAG,__VA_ARGS__)
 #define  LOG_I(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
 
-// ANDROID FUNCTIONS
 void android_set_asset_mgr();
 void android_free_asset_mgr();
-void android_load_asset_file(const char* filename);
-int android_set_screen_dims(Config* config);
+int android_load_asset_file(const char* filename);
+
+// IPHONE
+#elif __IPHONE__
 
 #else
 
-#define  LOG_E(...)  fprintf(stderr, __VA_ARGS__)
-#define  LOG_W(...)  fprintf(stderr, __VA_ARGS__)
-#define  LOG_D(...)  printf(__VA_ARGS__)
-#define  LOG_I(...)  printf(__VA_ARGS__)
+#define  LOG_E(...)  printf("ERROR: "); fprintf(stderr, __VA_ARGS__)
+#define  LOG_W(...)  printf("WARN: "); fprintf(stderr, __VA_ARGS__)
+#define  LOG_D(...)  printf("DEBUG: "); printf(__VA_ARGS__)
+#define  LOG_I(...)  printf("INFO: "); printf(__VA_ARGS__)
 
 #endif
 
@@ -67,5 +73,11 @@ int screen_height();
 int screen_center_x();
 
 int screen_center_y();
+
+double _get_fps(Config* const cptr, bool set_cptr);
+
+double get_fps_set_cptr(Config* const cptr);
+
+double get_fps();
 
 #endif

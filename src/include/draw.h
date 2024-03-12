@@ -73,8 +73,6 @@ void draw_screen_ending(SDL_Renderer* renderer, Config* config);
 
 void draw_screen_title(Config* config);
 
-bool is_widescreen(const Config* const config);
-
 void draw_option_aspect(const Config* const config);
 void draw_option_fps(const Config* const config);
 void draw_option_autosave(const Config* const config);
