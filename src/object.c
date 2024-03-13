@@ -376,9 +376,7 @@ EndState* init_end_state(const double fps, GameState* state, SDL_Renderer* rende
 }
 
 int set_window_icon(SDL_Window* window) {
-	//convertAndPrintARGB(LOGO, LOGO_W, LOGO_H);
-	//exit(1);
-
+#ifndef __MAGICSMOBILE__
     SDL_Surface* icon_surf = SDL_CreateRGBSurfaceFrom(
         (void*)LOGO,            // Pointer to the pixel data
         LOGO_W,                 // Width of the logo
@@ -398,6 +396,7 @@ int set_window_icon(SDL_Window* window) {
 	SDL_SetWindowIcon(window, icon_surf);
 	SDL_FreeSurface(icon_surf);
 	return 0;
+#endif
 }
 
 Config* init_magics_config(const E_AspectType aspect, const double fps, const int autosave_interval) {
@@ -439,8 +438,9 @@ Config* init_magics_config(const E_AspectType aspect, const double fps, const in
 		SDL_Quit();
 		return NULL;
 	}
+
 #ifndef __MAGICSMOBILE__
-	if (set_window_icon(config->window) < 0) {
+	if (!set_window_icon(config->window)) {
 		return NULL;
 	}
 #endif

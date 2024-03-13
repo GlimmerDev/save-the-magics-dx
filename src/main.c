@@ -16,8 +16,6 @@
 #include "include/event.h"
 #include "include/save.h"
 
-#define main SDL_main
-
 // GLOBAL VARIABLES
 
 // ********************
@@ -125,6 +123,13 @@ Config* magics_do_reload(E_AspectType aspect, double fps, int autosave_interval,
 bool check_do_reload(Config* config){
 	return (config->reload_state == RELOAD_STATE_EXECUTE);
 }
+
+#ifndef __MAGICSMOBILE__
+int main(int argc, char *argv[]) {
+	return SDL_main(argc, argv);
+}
+
+#endif
 
 int SDL_main(int argc, char *argv[]) {
 	// Init SDL & SDL modules

@@ -99,3 +99,5 @@ android/app/jni/SDL2_ttf/external/*
 !android/app/jni/SDL2_ttf/external/download.sh
 !android/app/jni/SDL2_ttf/external/Get-GitModules.ps1
 
+magics
+

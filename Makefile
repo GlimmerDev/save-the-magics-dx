@@ -19,6 +19,7 @@ ifeq ($(OS),Windows_NT)
 	LINKER_FLAGS = -lmingw32 -lSDL2main -lSDL2 -lSDL2_mixer -lSDL2_ttf -lSDL_FontCache -ljansson 
 # Unix-like (MacOS, Linux)
 else
+	INCLUDE_PATHS = -I/usr/local/include -I/usr/local/include/SDL2
 	COMPILER_FLAGS = 
 	LINKER_FLAGS = -lSDL2main -lSDL2 -lSDL2_mixer -lSDL2_ttf -lFontCache -ljansson -lm
 endif
