@@ -365,7 +365,7 @@ EndState* init_end_state(const double fps, GameState* state, SDL_Renderer* rende
 	SDL_SetTextureBlendMode(expl_tx1, SDL_BLENDMODE_BLEND);
 	SDL_SetTextureBlendMode(expl_tx2, SDL_BLENDMODE_BLEND);
 	
-	e->explosion_delay = fps;
+	e->explosion_delay = fps*10;
 	e->explosion_radius = 2.0f;
 	e->explosion_alpha = 255.0f;
 	e->ship_glow_alpha = 150.0f;
@@ -395,8 +395,8 @@ int set_window_icon(SDL_Window* window) {
 	}
 	SDL_SetWindowIcon(window, icon_surf);
 	SDL_FreeSurface(icon_surf);
-	return 0;
 #endif
+	return 0;
 }
 
 Config* init_magics_config(const E_AspectType aspect, const double fps, const int autosave_interval) {
@@ -439,11 +439,9 @@ Config* init_magics_config(const E_AspectType aspect, const double fps, const in
 		return NULL;
 	}
 
-#ifndef __MAGICSMOBILE__
-	if (!set_window_icon(config->window)) {
-		return NULL;
+	if (set_window_icon(config->window) < 0) {
+		LOG_W("Unable to set window icon\n");
 	}
-#endif
 
 	LOG_D("Creating renderer\n");
 	config->renderer = SDL_CreateRenderer(config->window, -1, SDL_RENDERER_ACCELERATED);
@@ -454,30 +452,91 @@ Config* init_magics_config(const E_AspectType aspect, const double fps, const in
     	SDL_Quit();
     	return NULL;
 	}
+	config->save_version = SAVE_VERSION;
+	config->autosave_interval = autosave_interval;
+
+	if (init_config_modules(config) < 0) {
+		free(config);
+		return NULL;
+	}
+
+	return config;
+}
+
+void free_state(GameState* state) {
+	if (!state) return;
+	free(state);
+}
+
+void free_upgrades(Upgrade* upgrades) {
+	if (!upgrades) return;
+	for (int i = 0; i < NUM_UPGRADES; ++i) {
+		if (upgrades[i].button) {
+			free(upgrades[i].button);
+		}
+	}
+	free(upgrades);
+}
+
+void free_config_modules(Config* config) {
+	free_state(config->state);
 	
+	// free sounds
+	for (int i = 0; i < NUM_SOUNDS; ++i) {
+		if (config->sounds[i]) {
+			Mix_FreeChunk(config->sounds[i]);
+		}
+	}
+	free(config->sounds);
+	
+	// free buttons
+	if (config->buttons) {
+		free(config->buttons);
+	}
+	
+	// free upgrades
+	free_upgrades(config->upgrades);
+	
+	// free save data
+	for (int i = 0; i < 4; ++i) {
+		if (config->saves[i].path) {
+			free(config->saves[i].path);
+		}
+	}
+	if (config->saves) {
+		free(config->saves);
+	}
+	
+	// free ending state
+	SDL_DestroyTexture(config->ending_state->expl_tx1);
+	SDL_DestroyTexture(config->ending_state->expl_tx2);
+	if (config->ending_state) {
+		free(config->ending_state);
+	}
+}
+
+int init_config_modules(Config* config) {
 	LOG_D("State init\n");
-	config->state = init_state(fps);
+	config->state = init_state(config->FPS);
 	if (!config->state) {
 		LOG_E("Unable to init state\n");
 		free(config);
-		return NULL;
+		return -1;
 	}
 	LOG_D("Upgrade init\n");
-	config->upgrades = init_upgrades(fps, config->state);
+	config->upgrades = init_upgrades(config->FPS, config->state);
 	if (!config->upgrades) {
 		LOG_E("Unable to init upgrades\n");
 		free(config->state);
-		free(config);
-		return NULL;
+		return -1;
 	}
 	LOG_D("Button init\n");
-	config->buttons = init_buttons(fps, config->state);
+	config->buttons = init_buttons(config->FPS, config->state);
 	if (!config->buttons) {
 		LOG_E("Unable to init buttons\n");
 		free(config->state);
 		free(config->upgrades);
-		free(config);
-		return NULL;
+		return -1;
 	}
 	LOG_D("Sound init\n");
 	config->sounds = init_sounds();
@@ -486,8 +545,7 @@ Config* init_magics_config(const E_AspectType aspect, const double fps, const in
 		free(config->state);
 		free(config->upgrades);
 		free(config->buttons);
-		free(config);
-		return NULL;
+		return -1;
 	}
 	
 	config->saves = init_save_slots();
@@ -497,11 +555,10 @@ Config* init_magics_config(const E_AspectType aspect, const double fps, const in
 		free(config->upgrades);
 		free(config->buttons);
 		free(config->sounds);
-		free(config);
-		return NULL;		
+		return -1;
 	}
 	
-	config->ending_state = init_end_state(fps, config->state, config->renderer);
+	config->ending_state = init_end_state(config->FPS, config->state, config->renderer);
 	if (!config->ending_state) {
 		LOG_E("Unable to init ending state\n");
 		free(config->state);
@@ -509,14 +566,13 @@ Config* init_magics_config(const E_AspectType aspect, const double fps, const in
 		free(config->buttons);
 		free(config->sounds);
 		free(config->saves);
-		free(config);
-		return NULL;
+		return -1;
 	}
 	LOG_D("Init save paths\n");
 	char save_path_buf[MAX_PATH_LEN] = "";
 	for (int i = 0; i < 4; ++i) {
 		snprintf(save_path_buf, MAX_PATH_LEN, "%s/magics_save_%d.json", get_save_path(), i);
-		config->saves[i].path = malloc(strlen(save_path_buf));
+		config->saves[i].path = strdup(save_path_buf);
 		if (!(config->saves[i].path)) {
 			LOG_E("Unable to init save paths\n");
 			free(config->state);
@@ -525,15 +581,10 @@ Config* init_magics_config(const E_AspectType aspect, const double fps, const in
 			free(config->sounds);
 			free(config->saves);
 			free(config->ending_state);
-			free(config);
-			return NULL;
+			return -1;
 		}
-		strcpy(config->saves[i].path, save_path_buf);
 	}
-	config->save_version = SAVE_VERSION;
-	config->autosave_interval = autosave_interval;
-
-	return config;
+	return 0;
 }
 
 int set_upgrade_rects(Upgrade* upgrades, const int n, const int start_offset) {

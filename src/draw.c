@@ -286,19 +286,19 @@ void init_starfield() {
 }
 
 void init_bg_shapes() {
-	BG_SHAPES[0] =  (Shape){SHAPE_TYPE_CIRCLE, PLANET1, screen_width()/2, screen_height()/2, 240, 0, NULL};		     // BG_PLANET1
-	BG_SHAPES[1] = 	(Shape){SHAPE_TYPE_CIRCLE, PLANET2, screen_width()/2, screen_height()/2, 230, 0, NULL};		     // BG_PLANET2
-	BG_SHAPES[2] = 	(Shape){SHAPE_TYPE_CIRCLE, PLANET3, screen_width()/2, screen_height()/2, 224, 0, NULL};		     // BG_PLANET3
-	BG_SHAPES[3] = 	(Shape){SHAPE_TYPE_CIRCLE, PLANET3, screen_width()/4, screen_height()/4, 80, 0, NULL}; 		     // BG_MEDI_SUN1
-	BG_SHAPES[4] = 	(Shape){SHAPE_TYPE_CIRCLE, PLANET2, screen_width()/6, screen_width()/6-46, 40, 0, NULL};  		 // BG_MEDI_SUN2
-	BG_SHAPES[5] = 	(Shape){SHAPE_TYPE_CIRCLE, PLANET1, screen_width()/3 + 20, screen_width()/3 - 256, 60, 0, NULL}; // BG_MEDI_SUN3
-	BG_SHAPES[6] = 	(Shape){SHAPE_TYPE_TREE, PLANET2, 700, 440, 0, 0, NULL};									     // BG_MEDI_TREE1
-	BG_SHAPES[7] = 	(Shape){SHAPE_TYPE_TREE, PLANET2, 100, 590, 0, 0, NULL};									     // BG_MEDI_TREE2
-	BG_SHAPES[8] = 	(Shape){SHAPE_TYPE_TREE, PLANET1, 400, 520, 0, 0, NULL};									     // BG_MEDI_TREE3
-	BG_SHAPES[9] = 	(Shape){SHAPE_TYPE_HILL, PLANET3, 0, 0, 200, 0, NULL}; 									         // BG_MEDI_HILL1
-	BG_SHAPES[10] = (Shape){SHAPE_TYPE_HILL, PLANET2, 0, 0, 150, 0, NULL}; 									         // BG_MEDI_HILL2
-	BG_SHAPES[11] = (Shape){SHAPE_TYPE_HILL, PLANET1, 0, 0, 100, 0, NULL}; 									         // BG_MEDI_HILL3
-	BG_SHAPES[12] = (Shape){SHAPE_TYPE_RECT, TRANS_WHITE, screen_center_x()-393, 316, 784, 233, NULL}; 				 // BG_MENU_RECT
+	BG_SHAPES[0] =  (Shape){SHAPE_TYPE_CIRCLE, PLANET1, screen_center_x(), screen_center_y(), 240, 0, NULL};		            // BG_PLANET1
+	BG_SHAPES[1] = 	(Shape){SHAPE_TYPE_CIRCLE, PLANET2, screen_center_x(), screen_center_y(), 230, 0, NULL};		            // BG_PLANET2
+	BG_SHAPES[2] = 	(Shape){SHAPE_TYPE_CIRCLE, PLANET3, screen_center_x(), screen_center_y(), 224, 0, NULL};		            // BG_PLANET3
+	BG_SHAPES[3] = 	(Shape){SHAPE_TYPE_CIRCLE, PLANET3, screen_center_x()-200, screen_center_y()-150, 80, 0, NULL};             // BG_MEDI_SUN1
+	BG_SHAPES[4] = 	(Shape){SHAPE_TYPE_CIRCLE, PLANET2, screen_center_x()-266, screen_center_y()-200, 40, 0, NULL};             // BG_MEDI_SUN2
+	BG_SHAPES[5] = 	(Shape){SHAPE_TYPE_CIRCLE, PLANET1, screen_center_x()-134, screen_center_y()-280, 60, 0, NULL};             // BG_MEDI_SUN3
+	BG_SHAPES[6] = 	(Shape){SHAPE_TYPE_TREE, PLANET2, screen_ratio()*525, screen_height()-screen_ratio()*120, 0, 0, NULL};      // BG_MEDI_TREE1
+	BG_SHAPES[7] = 	(Shape){SHAPE_TYPE_TREE, PLANET2, screen_ratio()*75, screen_height()-screen_ratio()*8, 0, 0, NULL};         // BG_MEDI_TREE2
+	BG_SHAPES[8] = 	(Shape){SHAPE_TYPE_TREE, PLANET1, screen_ratio()*300, screen_height()-screen_ratio()*60, 0, 0, NULL};	    // BG_MEDI_TREE3
+	BG_SHAPES[9] = 	(Shape){SHAPE_TYPE_HILL, PLANET3, 0, 0, screen_ratio()*150, 0, NULL}; 						                // BG_MEDI_HILL1
+	BG_SHAPES[10] = (Shape){SHAPE_TYPE_HILL, PLANET2, 0, 0, screen_ratio()*113, 0, NULL}; 						                // BG_MEDI_HILL2
+	BG_SHAPES[11] = (Shape){SHAPE_TYPE_HILL, PLANET1, 0, 0, screen_ratio()*75, 0, NULL}; 							            // BG_MEDI_HILL3
+	BG_SHAPES[12] = (Shape){SHAPE_TYPE_RECT, TRANS_WHITE, screen_center_x()-393, 316, 784, 233, NULL}; 			            	// BG_MENU_RECT
 }
 
 void init_end_ship_shapes() {
@@ -847,9 +847,14 @@ void draw_screen_save(Config* config) {
 			draw_button(SAVE_CANCEL_B);
 		}
 	} else if (config->state->current_menu == MENU_SV_CNF_OVERWR) {
-		
+		draw_text("Overwrite this save slot? All previous progress will be lost!", \
+			screen_center_x(), 200-15, FONT_RPG, 30, WHITE, config->renderer);
+			draw_button(SAVE_YES_B);
+			draw_button(SAVE_NO_B);
 	} else {
-		for (int i = 0; i < 4; ++i) {
+		bool locked;
+		int start_slot = (config->state->current_menu == MENU_SV_SLOT);
+		for (int i = start_slot; i < 4; ++i) {
 			bptr = &(config->buttons[SAVE_0_B+i]);
 			if (config->saves[i].exists) {
 				const char* time_str = time_to_time_str(&(config->saves[i].last_saved));
@@ -861,6 +866,7 @@ void draw_screen_save(Config* config) {
 					snprintf(save_slot_buf, sizeof(save_slot_buf), "AUTO. %s", time_str);
 				}
 			} else {
+				bptr->color = LOCKED;
 				draw_button_by_ref(bptr);
 				snprintf(save_slot_buf, sizeof(save_slot_buf), "%d. NO SAVE DATA", i);
 			}

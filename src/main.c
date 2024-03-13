@@ -38,42 +38,14 @@ void _magics_cleanup(Config* const cptr, bool set_cptr, bool quit_sdl) {
 		SDL_Quit();
 	}
 
-	// free state
-	if (config->state) free(config->state);
-	
-	// free sounds
-	for (int i = 0; i < NUM_SOUNDS; ++i) {
-		if (config->sounds[i]) Mix_FreeChunk(config->sounds[i]);
-	}
-	free(config->sounds);
-	
 	// free fonts
 	magics_font_cleanup();
 
-	// free buttons
-	if (config->buttons) free(config->buttons);
-	
-	// free upgrades
-	for (int i = 0; i < NUM_UPGRADES; ++i) {
-		if (config->upgrades[i].button) free(config->upgrades[i].button);
-	}
-	if (config->upgrades) free(config->upgrades);
-	
 	// free shape vertices
 	bg_vertex_cleanup();
-	
-	// free save data
-	for (int i = 0; i < 4; ++i) {
-		if (config->saves[i].path) {
-			free(config->saves[i].path);
-		}
-	}
-	if (config->saves) free(config->saves);
-	
-	// free ending state
-	SDL_DestroyTexture(config->ending_state->expl_tx1);
-	SDL_DestroyTexture(config->ending_state->expl_tx2);
-	if (config->ending_state) free(config->ending_state);
+
+	// free config modules
+	free_config_modules(config);
 
 	// free config
 	free(config);
@@ -100,7 +72,32 @@ void magics_register_config(Config* const cptr) {
 	get_fps_set_cptr(cptr);
 }
 
-Config* magics_do_reload(E_AspectType aspect, double fps, int autosave_interval, float* time_step, float* max_accumulator) {
+int magics_soft_reload(Config* config) {
+	free_state(config->state);
+	free_upgrades(config->upgrades);
+	LOG_D("Init new state\n");
+	config->state = init_state(config->FPS);
+	if (!config->state) {
+		LOG_E("Error getting new state\n");
+		return -1;
+	}
+	LOG_D("Init new upgrades\n");
+	config->upgrades = init_upgrades(config->FPS, config->state);
+	if (!config->upgrades) {
+		LOG_E("Error getting new upgrades\n");
+		return -1;
+	}
+	LOG_D("Re-lock menu buttons\n");
+	for (int i = MENU_PRINCESS_B; i <= MENU_EVIL_B; ++i) {
+		config->buttons[i].locked = true;
+	}
+	set_upgrade_rects(config->upgrades, NUM_UPGRADES, 0);
+	set_upgrade_rects(config->upgrades, NUM_PRINCESSES, PRINCESS_OFFSET);
+	set_upgrade_rects(config->upgrades, NUM_INCANTATIONS, INCANTATION_OFFSET);
+	return 0;
+}
+
+Config* magics_hard_reload(E_AspectType aspect, double fps, int autosave_interval, float* time_step, float* max_accumulator) {
 	_magics_cleanup(NULL, false, false);
 	
 	Config* new_config = init_magics_config(aspect, fps, autosave_interval);
@@ -124,7 +121,7 @@ bool check_do_reload(Config* config){
 	return (config->reload_state == RELOAD_STATE_EXECUTE);
 }
 
-#ifndef __MAGICSMOBILE__
+#if !defined(__MAGICSMOBILE__) && !defined(main)
 int main(int argc, char *argv[]) {
 	return SDL_main(argc, argv);
 }
@@ -166,7 +163,6 @@ int SDL_main(int argc, char *argv[]) {
 	LOG_D("Initializing shapes...\n");
 	init_shapes(config);
 
-	
 	// framerate related
 	unsigned int prev_ticks = SDL_GetTicks();
 	unsigned int fps_prev_ticks = prev_ticks;
@@ -184,6 +180,7 @@ int SDL_main(int argc, char *argv[]) {
 	unsigned int upgrade_page = 0;
 	unsigned int princess_page = 0;
 	unsigned int autosave_timer = 0;
+	unsigned int save_slot = 0;
 	
 	Button* bptr = NULL;
 	
@@ -193,8 +190,10 @@ int SDL_main(int argc, char *argv[]) {
 	
 	while (running) {
 		if (check_do_reload(config)) {
-			config = magics_do_reload(config->aspect, get_fps(), config->autosave_interval, 
+			LOG_D("***\nHard reloading...\n");
+			config = magics_hard_reload(config->aspect, get_fps(), config->autosave_interval, 
 										&TIME_STEP, &MAX_ACCUMULATOR);
+			LOG_D("***\nHard reload complete.\n");
 		}
 
 		unsigned int curr_ticks = SDL_GetTicks();
@@ -260,8 +259,8 @@ int SDL_main(int argc, char *argv[]) {
 			// update starfield
 			update_starfield(config->state);
 
-			// check buttons that are ready to trigger
-			check_done_buttons(config, &upgrade_page, &princess_page, &running);
+			// check buttons that are ready to trigger actions
+			check_done_buttons(config, &upgrade_page, &princess_page, &running, &save_slot);
 			
 			// *************************
 			// *** END HANDLE EVENTS ***
@@ -314,6 +313,19 @@ int SDL_main(int argc, char *argv[]) {
 			frame_count = 0;
 			fps_prev_ticks = curr_ticks;
 		}
+
+		// On mobile, we must avoid quitting, as this is considered bad practice.
+		#ifndef __MAGICSMOBILE__
+		if (!running) {
+			running = true;
+			LOG_D("***\nSoft reloading...\n");
+			if (magics_soft_reload(config) < 0) {
+				LOG_E("Error during main loop soft reload!\n");
+				return -1;
+			}
+			LOG_D("***\nSoft reload complete.\n");
+		}
+		#endif
 	}
 
     return 0;

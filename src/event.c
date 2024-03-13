@@ -133,7 +133,7 @@ void event_update_mute(Config* const config) {
 	update_mute_button(config);
 }
 
-void check_done_buttons(Config* const config, unsigned int* const upgrade_page, unsigned int* const princess_page, bool* const running) {
+void check_done_buttons(Config* const config, unsigned int* const upgrade_page, unsigned int* const princess_page, bool* const running, unsigned int* save_slot) {
 	Button* buttons = config->buttons;
 	GameState* state = config->state;
 
@@ -160,7 +160,7 @@ void check_done_buttons(Config* const config, unsigned int* const upgrade_page, 
 			bptr = get_button(OPT_CONFIRM_B);
 			if (done_button(bptr)) {
 				if (config->reload_state > RELOAD_STATE_NONE) {
-					create_config_file(config->aspect, config->FPS, config->autosave_interval);
+					create_config_file(config->autosave_interval, config->FPS, config->aspect);
 					if (config->reload_state == RELOAD_STATE_REQUESTED) {
 						++(config->reload_state);
 					} else {
@@ -202,7 +202,20 @@ void check_done_buttons(Config* const config, unsigned int* const upgrade_page, 
 			break;
 		#endif
 		case SCREEN_SAVE:
-			if (state->current_menu >= MENU_SV_CNF_QUIT) {
+			if (state->current_menu == MENU_SV_CNF_OVERWR) {
+				bptr = get_button(SAVE_YES_B);
+				if (done_button(bptr)) {
+					save_game(config, *save_slot);
+					*running = false;
+					return;
+				}
+				bptr = get_button(SAVE_NO_B);
+				if (done_button(bptr)) {
+					state->current_menu = MENU_SV_SLOT;
+				}
+				break;
+			}
+			else if (state->current_menu >= MENU_SV_CNF_QUIT) {
 				bptr = get_button(SAVE_YES_B);
 				if (done_button(bptr)) {
 					state->current_menu = MENU_SV_SLOT;
@@ -231,6 +244,7 @@ void check_done_buttons(Config* const config, unsigned int* const upgrade_page, 
 						state->current_screen = SCREEN_GAME_LOOP;
 						state->current_menu = MENU_UPGRADES;
 					} else if (config->saves[i].exists) {
+						*save_slot = i;
 						state->current_menu = MENU_SV_CNF_OVERWR;
 					} else {
 						save_game(config, i);
@@ -445,7 +459,7 @@ void handle_click_save(const SDL_Point* const mouse_pos, Config* const config) {
 	Mix_Chunk** sounds = config->sounds;
 	GameState* state = config->state;
 	
-	if (state->current_menu >= MENU_SV_CNF_QUIT) {
+	if (state->current_menu >= MENU_SV_CNF_OVERWR) {
 		int end_offset = 2 + (state->current_menu == MENU_SV_CNF_QUIT);
 		for (int i = 0; i < end_offset; ++i) {
 			bptr = get_button(SAVE_YES_B+i);
@@ -456,7 +470,7 @@ void handle_click_save(const SDL_Point* const mouse_pos, Config* const config) {
 	} else {
 		for (int i = 0; i < 4; ++i) {
 			bptr = get_button(SAVE_0_B+i);
-			if (bptr->locked) {
+			if ((state->current_menu == MENU_LD_SLOT) && (bptr->locked)) {
 				continue;
 			}
 			if (clicked_button(bptr, mouse_pos)) {

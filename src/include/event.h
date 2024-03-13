@@ -25,7 +25,7 @@ void update_mute_button(Config* const config);
 
 void event_update_mute(Config* const config);
 
-void check_done_buttons(Config* const config, unsigned int* const upgrade_page, unsigned int* const princess_page, bool* const running);
+void check_done_buttons(Config* const config, unsigned int* const upgrade_page, unsigned int* const princess_page, bool* const running, unsigned int* save_slot);
 
 bool check_ending_success(const Config* const config);
 

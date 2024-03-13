@@ -2,6 +2,7 @@
 #define MAGICS_UTIL_H
 
 #include <stdbool.h>
+#include <jansson.h>
 #include "object.h"
 
 // MOBILE (SHARED)
@@ -66,6 +67,8 @@ int screen_center_set_cptr(Config* const cptr);
 
 int screen_dims_set_cptr(Config* const cptr);
 
+double screen_ratio();
+
 int screen_width();
 
 int screen_height();
@@ -79,5 +82,11 @@ double _get_fps(Config* const cptr, bool set_cptr);
 double get_fps_set_cptr(Config* const cptr);
 
 double get_fps();
+
+char* magics_read_file(const char* path, size_t* size);
+int magics_write_file(const char* data, const char* path, size_t size);
+
+json_t* load_json_file(const char* path, json_error_t* error);
+int write_json_file(json_t* data, const char* path);
 
 #endif

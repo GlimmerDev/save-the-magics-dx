@@ -136,6 +136,13 @@ EndState* init_end_state(const double fps, GameState* state, SDL_Renderer* rende
 
 int set_window_icon(SDL_Window* window);
 
+
+void free_state(GameState* state);
+void free_upgrades(Upgrade* upgrades) ;
+void free_config_modules(Config* config);
+
+int init_config_modules(Config* config);
+
 Config* init_magics_config(const E_AspectType aspect, const double fps, const int autosave_interval);
 
 int set_upgrade_rects(Upgrade* upgrades, const int n, const int start_offset);

@@ -172,6 +172,10 @@ int screen_dims_set_cptr(Config* const cptr) {
 	return _scr_dims(false, cptr, true);
 }
 
+double screen_ratio() {
+	return ((double)_scr_dims(false, NULL, false)) / ((double)_scr_dims(true, NULL, false));
+}
+
 int screen_width() {
 	return _scr_dims(false, NULL, false);
 }
@@ -206,6 +210,65 @@ double get_fps_set_cptr(Config* const cptr) {
 
 double get_fps() {
 	return _get_fps(NULL, false);
+}
+
+char* magics_read_file(const char* path, size_t* size) {
+	SDL_RWops* fp = SDL_RWFromFile(path, "rb");
+	if (!fp) {
+		LOG_E("Error opening file for load: %s", path);
+		return NULL;
+	}
+	int len = SDL_RWseek(fp, 0, SEEK_END);
+	(*size) = len+1;
+	SDL_RWseek(fp, 0, SEEK_SET);
+	char* data_str = (char*)safe_malloc(len+1);
+	data_str[len] = '\0';
+	SDL_RWread(fp, data_str, len, 1);
+	SDL_RWclose(fp);
+	
+	return data_str;
+}
+
+int magics_write_file(const char* data, const char* path, size_t size) {
+	SDL_RWops* fp = SDL_RWFromFile(path, "wb");
+	if (!fp) {
+		LOG_E("Error opening file for write: %s", path);
+		return -1;
+	}
+	SDL_RWwrite(fp, data, size, 1);
+	SDL_RWclose(fp);
+	
+	return 0;
+}
+
+/*
+Loads a JSON file into a json_t object.
+Uses SDL file I/O functions instead of jansson to ensure cross-platform compatibility.
+*/
+json_t* load_json_file(const char* path, json_error_t* error) {
+	size_t size;
+	char* data_str = magics_read_file(path, &size);
+	if (!data_str) {
+		return (json_t*)NULL;
+	}
+	json_t* d = json_loads(data_str, 0, error);
+	free(data_str);
+	return d;
+}
+
+/*
+Dumps a json_t object into a file.
+Uses SDL file I/O functions instead of jansson to ensure cross-platform compatibility.
+*/
+int write_json_file(json_t* data, const char* path) {
+	char* data_str = json_dumps(data, JSON_ENSURE_ASCII|JSON_INDENT(4));
+	if (!data_str) return -1;
+	size_t size = strlen(data_str);
+	if (magics_write_file(data_str, path, size) < 0) {
+		return -1;
+	}
+	free(data_str);
+	return 0;
 }
 
 // ***************************
@@ -263,6 +326,7 @@ void android_free_asset_mgr() {
 /*
 Loads "filename" from the Android app assets, then dumps it to the internal storage.
 */
+/*
 int android_load_asset_file(const char* filename) {
 	if (!ASSET_MGR) {
 		LOG_D("Getting asset manager...\n");
@@ -291,6 +355,19 @@ int android_load_asset_file(const char* filename) {
 
 	// Free the memory allocated earlier
 	free(content);
+	return 0;
+}*/
+
+int android_load_asset_file(const char* filename) {
+	size_t size;
+	const char* data = magics_load_file(filename, &size);
+	if (!data) {
+		return -1;
+	}
+	if (magics_write_file(data, filename, size) < 0) {
+		return -1;
+	}
+	free(data);
 	return 0;
 }
 #endif

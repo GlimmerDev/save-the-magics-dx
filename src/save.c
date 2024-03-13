@@ -240,24 +240,6 @@ json_t* create_save_json(Config* config) {
 	return j_root;
 }
 
-/*
-Dumps a json_t object into a file.
-Uses SDL file I/O functions instead of jansson to ensure cross-platform compatibility.
-*/
-int magics_dump_json(json_t* data, const char* path) {
-	char* data_str = json_dumps(data, JSON_ENSURE_ASCII|JSON_INDENT(4));
-	if (!data_str) return -1;
-	size_t len = strlen(data_str);
-	SDL_RWops* fp = SDL_RWFromFile(path, "w");
-	if (!fp) {
-		return -1;
-	}
-	SDL_RWwrite(fp, data_str, len, 1);
-	SDL_RWclose(fp);
-	free(data_str);
-	return 0;
-}
-
 int save_game(Config* config, const unsigned short slot) {
 	if (!config->saves[slot].path) {
 		return -1;
@@ -268,7 +250,7 @@ int save_game(Config* config, const unsigned short slot) {
 		return -1;
 	}
 	
-	if (!magics_dump_json(save_data, config->saves[slot].path)) {
+	if (write_json_file(save_data, config->saves[slot].path) < 0) {
 		LOG_E("Error writing save file: %s\n", config->saves[slot].path);
 		json_decref(save_data);
 		return -1;
@@ -360,25 +342,9 @@ void load_save_json_buttons(json_t* save_data, Config* config) {
 	json_decref(j_buttons);
 }
 
-/*
-Loads a JSON file into a json_t object.
-Uses SDL file I/O functions instead of jansson to ensure cross-platform compatibility.
-*/
-json_t* magics_load_json(const char* path, json_error_t* error) {
-	SDL_RWops* fp = SDL_RWFromFile(path, "r");
-	int len = SDL_RWseek(fp, 0, SEEK_END);
-	SDL_RWseek(fp, 0, SEEK_SET);
-	char* data_str = (char*)safe_malloc(len+1);
-	data_str[len] = '\0';
-	SDL_RWread(fp, data_str, len, 1);
-	json_t* d = json_loads(data_str, 0, error);
-	free(data_str);
-	return d;
-}
-
 json_t* load_save_json(const char* path) {	
 	json_error_t error;
-	json_t* save_data = magics_load_json(path, &error);
+	json_t* save_data = load_json_file(path, &error);
 	json_incref(save_data);
 	if (!save_data) {
 		LOG_E("Error creating save_data object for load\n");
@@ -445,12 +411,12 @@ char* create_save_path() {
 	const char* config_path = get_base_path();
 	char* save_path = get_save_path();
 	if (!file_exists(config_path)) {
-		if (!create_directory(config_path)) {
+		if (create_directory(config_path) < 0) {
 			return NULL;
 		}
 	}
 	if (!file_exists(save_path)) {
-		if (!create_directory(save_path)) {
+		if (create_directory(save_path) < 0) {
 			return NULL;
 		}
 	}
@@ -542,7 +508,7 @@ unsigned int calc_magic_missile(const long timestamp, const Config* const config
 Config* load_config_from_file() {
 	char* config_path = get_config_file_path();
 	json_error_t error;
-	json_t* j_config = magics_load_json(config_path, &error);
+	json_t* j_config = load_json_file(config_path, &error);
 	if (!j_config) {
 		LOG_E("Error creating j_config in load_config_from_file\n");
 		return NULL;
@@ -568,7 +534,7 @@ int create_config_file(const unsigned int autosave_interval, const double fps, c
 	json_object_set(j_config, "fps", json_real(fps));
 
 	char* config_path = get_config_file_path();
-	if (!magics_dump_json(j_config, config_path)) {
+	if (write_json_file(j_config, config_path) < 0) {
 		LOG_E("Error writing config file: %s\n", config_path);
 		json_decref(j_config);
 		return -1;
