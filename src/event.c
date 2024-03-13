@@ -94,7 +94,7 @@ void update_meditate_timer(GameState* const state) {
 	--(state->meditate_timer);
 }
 
-void update_autosave_timer(Config* const config, int* const autosave_timer) {
+void update_autosave_timer(Config* const config, unsigned int* const autosave_timer) {
 	if (config->autosave_interval == 0) {
 		return;
 	}
@@ -603,7 +603,7 @@ void handle_event_sdl(const SDL_Event event, SDL_Point* const mouse_pos, Config*
 				config->state->current_menu = MENU_UPGRADES;
 			} 
 			#endif
-			else if (SDLK_1 <= event.key.keysym.sym <= SDLK_5) {
+			else if (event.key.keysym.sym >= SDLK_1 && event.key.keysym.sym <= SDLK_5) {
 				if ((config->state->is_meditating) || (config->state->current_screen != SCREEN_GAME_LOOP)) {
 					break;
 				}

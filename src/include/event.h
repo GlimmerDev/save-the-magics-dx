@@ -13,7 +13,7 @@ void update_meditate_cooldown(GameState* const state, Mix_Chunk** const sounds);
 
 void update_meditate_timer(GameState* const state);
 
-void update_autosave_timer(Config* const config, int* const autosave_timer);
+void update_autosave_timer(Config* const config, unsigned int* const autosave_timer);
 
 void update_ending_timers(Config* const config);
 

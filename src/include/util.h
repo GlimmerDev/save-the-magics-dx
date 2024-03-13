@@ -7,7 +7,7 @@
 
 // MOBILE (SHARED)
 #ifdef __MAGICSMOBILE__
-int android_set_screen_dims(Config* config);
+int mobile_set_screen_dims(Config* config);
 #endif
 
 // ANDROID
@@ -28,7 +28,7 @@ void android_free_asset_mgr();
 int android_load_asset_file(const char* filename);
 
 // IPHONE
-#elif __IPHONE__
+//#elif __IPHONE__
 
 #else
 

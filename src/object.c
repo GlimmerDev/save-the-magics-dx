@@ -403,7 +403,7 @@ Config* init_magics_config(const E_AspectType aspect, const double fps, const in
 	Config* config = (Config*)calloc(1, sizeof(Config));
 	if (!config) return NULL;
 
-#ifdef __MAGICSMOBILE__
+#ifdef __MAGICSMOBILEZIT__
 	mobile_set_screen_dims(config);
 #else
 	config->screen_scale = 1.0;
@@ -422,6 +422,7 @@ Config* init_magics_config(const E_AspectType aspect, const double fps, const in
 #endif
 	config->screen_center_x = config->screen_width/2;
 	config->screen_center_y = config->screen_height/2;
+	SDL_RenderSetScale(config->renderer, config->screen_scale, config->screen_scale);
 
 	screen_center_set_cptr(config);
 	screen_dims_set_cptr(config);

@@ -290,7 +290,6 @@ int mobile_set_screen_dims(Config* config){
 	config->screen_width = m.w / ratio;
 	config->screen_height = m.h / ratio;
 	config->screen_scale = (double)ratio;
-
 	return 0;
 }
 #endif
@@ -360,11 +359,14 @@ int android_load_asset_file(const char* filename) {
 
 int android_load_asset_file(const char* filename) {
 	size_t size;
-	const char* data = magics_load_file(filename, &size);
+	char* data = magics_read_file(filename, &size);
 	if (!data) {
+		LOG_E("Error reading file from assets: %s", filename);
 		return -1;
 	}
+	LOG_D("%s - size %d", filename, size);
 	if (magics_write_file(data, filename, size) < 0) {
+		LOG_E("Error writing file loaded from asset: %s", filename);
 		return -1;
 	}
 	free(data);

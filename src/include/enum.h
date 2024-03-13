@@ -16,6 +16,10 @@
 #define __MAGICSMOBILE__
 #endif
 
+#ifdef __ANDROID__
+#undef stderr
+#endif
+
 // SCREEN DIMENSIONS
 #define SCREEN_WIDTH_W 1067
 #define SCREEN_WIDTH_C 800

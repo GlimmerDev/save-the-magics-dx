@@ -397,7 +397,7 @@ void draw_background_meditate(SDL_Renderer* renderer) {
 
 int draw_rect(const SDL_Rect* rect, const E_ColorIndex color, SDL_Renderer* renderer) {
 	set_draw_color(renderer, color);
-	SDL_RenderFillRect(renderer, rect);
+	return SDL_RenderFillRect(renderer, rect);
 }
 
 int _draw_button(Config* config, bool set_ptrs, bool by_ref, const E_ButtonIndex b_index, Button* b_ref) {

@@ -29,6 +29,6 @@ LOCAL_SRC_FILES := 	$(LOCAL_SRC_PATH)/main.c \
 
 LOCAL_SHARED_LIBRARIES := SDL2 SDL2_mixer SDL2_ttf FontCache libjansson
 
-LOCAL_LDLIBS := -lGLESv1_CM -lGLESv2 -lOpenSLES -llog -landroid
+LOCAL_LDLIBS := -lc -lGLESv1_CM -lGLESv2 -lOpenSLES -llog -landroid
 
 include $(BUILD_SHARED_LIBRARY)
