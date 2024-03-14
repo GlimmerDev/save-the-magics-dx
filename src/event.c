@@ -81,6 +81,7 @@ void update_meditate_cooldown(GameState* const state, Mix_Chunk** const sounds) 
 		return;
 	} else if (state->meditate_cooldown == 1) {
 		Mix_PlayChannel(-1, sounds[MEDITATE_SND], 0);
+		get_button(START_MEDI_B)->locked = false;
 	}
 	--(state->meditate_cooldown);
 }
@@ -99,7 +100,7 @@ void update_autosave_timer(Config* const config, unsigned int* const autosave_ti
 		return;
 	}
 	++(*autosave_timer);
-	int interval = AUTOSAVE_INTERVALS[config->autosave_interval]*get_fps();
+	unsigned int interval = AUTOSAVE_INTERVALS[config->autosave_interval]*get_fps();
 	if ((*autosave_timer) > (interval*get_fps())) {
 		*autosave_timer = 0;
 		save_game(config, 0);
@@ -271,6 +272,7 @@ void check_done_buttons(Config* const config, unsigned int* const upgrade_page, 
 			bptr = get_button(START_MEDI_B);
 			if ( done_button(bptr) ) {
 				state->meditate_cooldown = DEFAULT_MEDI_COOLDOWN * get_fps();
+				bptr->locked = true;
 				state->is_meditating = true;
 			}
 			bptr = get_button(FACE_EVIL_B);

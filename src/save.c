@@ -144,7 +144,7 @@ json_t* create_save_json_upgrades(Config* config) {
 		json_array_append(j_upgrade_counts, json_integer(upgrades[i].count));
 	}
 	for (int i = INCANTATION_OFFSET; i < UPGRADES_END_OFFSET; ++i) {
-		json_array_append(j_upgrade_counts, json_integer(upgrades[i].cooldown));
+		json_array_append(j_upgrade_counts, json_integer(upgrades[i].cooldown/get_fps()));
 	}
 	
 	json_object_set_new(j_upgrades, "counts", j_upgrade_counts);
@@ -184,8 +184,8 @@ json_t* create_save_json_state(Config* config) {
 	json_object_set_new(j_state, "magic_per_click", json_integer(state->magic_per_click));
 	json_object_set_new(j_state, "magic_per_second", json_integer(state->magic_per_second));
 	json_object_set_new(j_state, "magic_multiplier", json_real(state->magic_multiplier));
-	json_object_set_new(j_state, "meditate_cooldown", json_integer(state->meditate_cooldown));
-	json_object_set_new(j_state, "meditate_timer", json_integer(state->meditate_timer));
+	json_object_set_new(j_state, "meditate_cooldown", json_integer(state->meditate_cooldown/get_fps()));
+	json_object_set_new(j_state, "meditate_timer", json_integer(state->meditate_timer/get_fps()));
 	json_object_set_new(j_state, "upgrade_max", json_integer(state->upgrade_max));
 	json_object_set_new(j_state, "princess_max", json_integer(state->princess_max));	
 	json_object_set_new(j_state, "win_count", json_integer(state->win_count));
@@ -292,7 +292,7 @@ int load_save_json_upgrades(json_t* save_data, Config* config, const bool is_cla
 			upgrades[i].cost = round(upgrades[i].cost*1.18f);
 		}
 	} for (int i = INCANTATION_OFFSET; i < UPGRADES_END_OFFSET; ++i) {
-		upgrades[i].cooldown = json_integer_value(json_array_get(j_upgrade_counts, i));
+		upgrades[i].cooldown = json_integer_value(json_array_get(j_upgrade_counts, i))*get_fps();
 	}
 	
 	// unlock upgrades/princesses
@@ -315,14 +315,12 @@ void load_save_json_state(json_t* save_data, Config* config) {
 	
 	state->is_muted = json_integer_value(json_object_get(j_state, "is_muted"));
 	event_update_mute(config);
-	// TODO: if FPS is different than the save's FPS, recalculate values as needed
-	// (for now, the FPS is always tied to the save file)
 	state->magic_count = json_real_value(json_object_get(j_state, "magic_count"));
 	state->magic_per_click = json_integer_value(json_object_get(j_state, "magic_per_click"));
 	state->magic_per_second = json_integer_value(json_object_get(j_state, "magic_per_second"));
 	state->magic_multiplier = json_real_value(json_object_get(j_state, "magic_multiplier"));
-	state->meditate_cooldown = json_integer_value(json_object_get(j_state, "meditate_cooldown"));
-	state->meditate_timer = json_integer_value(json_object_get(j_state, "meditate_timer"));
+	state->meditate_cooldown = json_integer_value(json_object_get(j_state, "meditate_cooldown"))*get_fps();
+	state->meditate_timer = json_integer_value(json_object_get(j_state, "meditate_timer"))*get_fps();
 	state->upgrade_max = json_integer_value(json_object_get(j_state, "upgrade_max"));
 	state->princess_max = json_integer_value(json_object_get(j_state, "princess_max"));
 	state->win_count = json_integer_value(json_object_get(j_state, "win_count"));
@@ -357,7 +355,7 @@ char* get_base_path() {
 	static char base_path[MAX_PATH_LEN] = "";
 	if (strcmp(base_path, "") == 0) {
 		strcpy(base_path, SDL_GetPrefPath(MAGICS_ORG_STR, MAGICS_APP_STR));
-		LOG_D("Set base path to: %s", base_path);
+		LOG_D("Set base path to: %s\n", base_path);
 	}
 	return base_path;
 }
@@ -366,7 +364,7 @@ char* get_config_file_path() {
 	static char config_path[MAX_PATH_LEN] = "";
 	if (strcmp(config_path, "") == 0) {
 		snprintf(config_path, MAX_PATH_LEN, "%s%s", get_base_path(), "config.json");
-		LOG_D("Set config path to: %s", config_path);
+		LOG_D("Set config path to: %s\n", config_path);
 	}
 	return config_path;
 }
@@ -375,7 +373,7 @@ char* get_save_path() {
 	static char save_path[MAX_PATH_LEN] = "";
 	if (strcmp(save_path, "") == 0) {
 		snprintf(save_path, MAX_PATH_LEN, "%s%s", get_base_path(), "save");
-		LOG_D("Set save path to: %s", save_path);
+		LOG_D("Set save path to: %s\n", save_path);
 	}
 	return save_path;
 }
@@ -415,7 +413,7 @@ void load_save_properties(Config* config, const unsigned short slot) {
 	config->saves[slot].win_count = json_integer_value(json_object_get(j_state, "win_count"));
 	
 	// indicate completed save games
-	if (config->saves[slot].win_count > 0) {
+	if (config->saves[slot].win_count) {
 		config->buttons[SAVE_0_B+slot].color = B_SAVE_CLEAR;
 	}
 	
@@ -435,7 +433,7 @@ void load_save(Config* config, const unsigned short slot) {
 	int save_version = json_integer_value(json_object_get(save_data, "save_version"));
 	if (save_version < 200) {
 		#ifdef DEBUG
-		LOG_I("Classic save detected!");
+		LOG_I("Classic save detected!\n");
 		#endif
 		load_save_json_upgrades(save_data, config, true);
 	}
@@ -452,14 +450,16 @@ void load_save(Config* config, const unsigned short slot) {
 	load_save_json_state(save_data, config);
 	
 	long last_saved = json_integer_value(json_object_get(save_data, "last_saved"));
+	#ifndef DEBUG
 	if (save_version >= 200) {
 		unsigned int magic_missile = json_integer_value(json_object_get(save_data, "magic_missile"));
 		if (magic_missile != calc_magic_missile(last_saved, config)) {
-			LOG_E("Error: magic missile!");
+			LOG_E("Error: magic missile!\n");
 			json_decref(save_data);
 			exit(ERR_MAGIC_MISSILE);
 		}
 	}
+	#endif
 	json_decref(save_data);
 }
 

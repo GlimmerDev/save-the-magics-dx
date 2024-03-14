@@ -241,6 +241,7 @@ Button* init_buttons(const double fps, GameState* state) {
 	
 	// buttons that require special parameters
 	buttons[MEDI_B].click_length = fps;
+	buttons[START_MEDI_B].locked = true;
 	
 	for (int i = 0; i < 4; ++i) {
 		buttons[SAVE_0_B+i].hide_locked_text = true;

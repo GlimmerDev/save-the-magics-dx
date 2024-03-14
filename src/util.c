@@ -48,7 +48,7 @@ This should NOT be used until the config pointers are registered, otherwise some
 void* safe_calloc(size_t nmemb, size_t size) {
 	void* ptr = calloc(nmemb, size);
 	if (!ptr) {
-		LOG_E("Cannot calloc memory at %p.", ptr);
+		LOG_E("Cannot calloc memory at: %p\n", ptr);
 		exit(ERR_MALLOC);
 	}
 	return ptr;
@@ -61,7 +61,7 @@ This should NOT be used until the config pointers are registered, otherwise some
 void* safe_malloc(size_t size) {
 	void* ptr = malloc(size);
 	if (!ptr) {
-		LOG_E("Cannot malloc memory at %p.", ptr);
+		LOG_E("Cannot malloc memory at: %p\n", ptr);
 		exit(ERR_MALLOC);
 	}
 	return ptr;	
@@ -111,17 +111,17 @@ int create_directory(const char* path) {
     #ifdef _WIN32
     if (!CreateDirectory(path, NULL)) {
         if (GetLastError() != ERROR_ALREADY_EXISTS) {
-			LOG_E("Error creating directory: %s", path);
+			LOG_E("Error creating directory: %s\n", path);
             return -1; // Failure
         }
-		LOG_W("Directory exists: %s", path);
+		LOG_W("Directory exists: %s\n", path);
 		return 0;
     }
     #else
     struct stat st = {0};
     if (stat(path, &st) == -1) {
         if (mkdir(path, 0777) == -1) {
-            LOG_E("Error creating directory: %s", path);
+            LOG_E("Error creating directory: %s\n", path);
             return -1;
         }
     }
@@ -222,7 +222,7 @@ double get_fps() {
 char* magics_read_file(const char* path, size_t* size) {
 	SDL_RWops* fp = SDL_RWFromFile(path, "rb");
 	if (!fp) {
-		LOG_E("Error opening file for load: %s", path);
+		LOG_E("Error opening file for load: %s\n", path);
 		return NULL;
 	}
 	int len = SDL_RWseek(fp, 0, SEEK_END);
@@ -237,10 +237,10 @@ char* magics_read_file(const char* path, size_t* size) {
 }
 
 int magics_write_file(const char* data, const char* path, size_t size) {
-	LOG_D("Write file path: %s", path);
+	LOG_D("Write file path: %s\n", path);
 	SDL_RWops* fp = SDL_RWFromFile(path, "wb");
 	if (!fp) {
-		LOG_E("Error opening file for write: %s", path);
+		LOG_E("Error opening file for write: %s\n", path);
 		return -1;
 	}
 	SDL_RWwrite(fp, data, size, 1);
