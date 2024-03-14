@@ -353,58 +353,31 @@ json_t* load_save_json(const char* path) {
 	return save_data;
 }
 
-
-char* get_home_path() {
-	#ifdef __MAGICSMOBILE__
-	return ".";
-	#else
-	static char home_path[MAX_PATH_LEN] = "";
-	if (strcmp(home_path, "") == 0) {
-		#ifdef _WIN32
-		snprintf(home_path, MAX_PATH_LEN, "%s", getenv("APPDATA"));
-		#else
-		// Unix-like (Linux, macOS)
-		snprintf(home_path, MAX_PATH_LEN, "%s", getenv("HOME"));
-		#endif
-	}
-	return home_path;
-	#endif
-}
-
 char* get_base_path() {
-	#ifdef __MAGICSMOBILE__
-	return ".";
-	#else
 	static char base_path[MAX_PATH_LEN] = "";
 	if (strcmp(base_path, "") == 0) {
-		snprintf(base_path, MAX_PATH_LEN, "%s%s", get_home_path(), "/.stm_dx");
+		strcpy(base_path, SDL_GetPrefPath(MAGICS_ORG_STR, MAGICS_APP_STR));
+		LOG_D("Set base path to: %s", base_path);
 	}
 	return base_path;
-	#endif
 }
 
 char* get_config_file_path() {
-	#ifdef __MAGICSMOBILE__
-	return "config.json";
-	#else
 	static char config_path[MAX_PATH_LEN] = "";
 	if (strcmp(config_path, "") == 0) {
-		snprintf(config_path, MAX_PATH_LEN, "%s%s", get_base_path(), "/config.json");
+		snprintf(config_path, MAX_PATH_LEN, "%s%s", get_base_path(), "config.json");
+		LOG_D("Set config path to: %s", config_path);
 	}
 	return config_path;
-	#endif
 }
 
 char* get_save_path() {
-	#ifdef __MAGICSMOBILE__
-	return ".";
-	#else
 	static char save_path[MAX_PATH_LEN] = "";
 	if (strcmp(save_path, "") == 0) {
-		snprintf(save_path, MAX_PATH_LEN, "%s%s", get_base_path(), "/save");
+		snprintf(save_path, MAX_PATH_LEN, "%s%s", get_base_path(), "save");
+		LOG_D("Set save path to: %s", save_path);
 	}
 	return save_path;
-	#endif
 }
 
 char* create_save_path() {

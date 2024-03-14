@@ -8,6 +8,9 @@
 #define SDL_RENDER_SCALE_QUALITY 0
 #define MAX_PATH_LEN 1024
 
+#define MAGICS_ORG_STR "GlimmerDev"
+#define MAGICS_APP_STR "SaveTheMagicsDX"
+
 #if defined(__APPLE__) && defined(TARGET_OS_IPHONE)
 #define __IPHONE__
 #endif

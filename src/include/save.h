@@ -35,7 +35,6 @@ void load_save_json_buttons(json_t* save_data, Config* config);
 
 json_t* load_save_json(const char* path);
 
-char* get_home_path();
 char* get_base_path();
 char* get_config_file_path();
 char* get_save_path();

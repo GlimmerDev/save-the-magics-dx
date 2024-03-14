@@ -49,10 +49,6 @@ void _magics_cleanup(Config* const cptr, bool set_cptr, bool quit_sdl) {
 
 	// free config
 	free(config);
-
-	#ifdef __ANDROID__
-	android_free_asset_mgr();
-	#endif
 	
 	return;
 }
@@ -152,6 +148,8 @@ int SDL_main(int argc, char *argv[]) {
 		LOG_E("Error: could not create magics config\n");
     	return -1;
 	}
+
+	create_save_path();
 	
 	LOG_D("Registering config ptr in convenience functions...\n");
 	magics_register_config(config);
@@ -315,7 +313,7 @@ int SDL_main(int argc, char *argv[]) {
 		}
 
 		// On mobile, we must avoid quitting, as this is considered bad practice.
-		#ifndef __MAGICSMOBILE__
+		#ifdef __MAGICSMOBILE__
 		if (!running) {
 			running = true;
 			LOG_D("***\nSoft reloading...\n");

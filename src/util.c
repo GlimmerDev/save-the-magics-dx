@@ -130,8 +130,15 @@ int create_directory(const char* path) {
     return 0;
 }
 
+/*
+ * Checks if a file exists. Uses SDL file I/O to ensure cross platform compatibility.
+*/
 bool file_exists(const char* path) {
-	return (access(path, F_OK) == 0);
+	SDL_RWops* fp = SDL_RWFromFile(path, "rb");
+	if (fp) {
+		SDL_RWclose(fp);
+	}
+	return (fp != NULL);
 }
 
 int _scr_center(const bool y, Config* const cptr, bool set_cptr) {
@@ -230,6 +237,7 @@ char* magics_read_file(const char* path, size_t* size) {
 }
 
 int magics_write_file(const char* data, const char* path, size_t size) {
+	LOG_D("Write file path: %s", path);
 	SDL_RWops* fp = SDL_RWFromFile(path, "wb");
 	if (!fp) {
 		LOG_E("Error opening file for write: %s", path);
@@ -285,78 +293,19 @@ int mobile_set_screen_dims(Config* config){
 		LOG_E("Error getting display mode");
 		return -1;
 	}
-	unsigned int ratio = floor(m.h/600);
+	unsigned int ratio = floor(m.h/600) + 1;
 	LOG_D("ScreenInfo: w: %d , h: %d, r: %d", m.w, m.h, ratio);
-	config->screen_width = m.w / ratio;
-	config->screen_height = m.h / ratio;
+	config->screen_width = m.w*ratio;
+	config->screen_height = m.h*ratio;
 	config->screen_scale = (double)ratio;
+	SDL_RenderSetLogicalSize(config->renderer, m.w, m.h);
+	SDL_RenderSetScale(config->renderer, 1/(float)ratio, 1/(float)ratio);
 	return 0;
 }
 #endif
 
 // ANDROID-RELATED FUNCTIONS
 #ifdef __ANDROID__
-
-AAssetManager* ASSET_MGR = NULL;
-
-/*
-Obtains the AAssetManager from Java. Needed for accessing files in the app assets.
-*/
-void android_set_asset_mgr() {
-	JNIEnv* env = (JNIEnv*)SDL_AndroidGetJNIEnv();
-	jobject activity = (jobject)SDL_AndroidGetActivity();
-	jclass clazz = (*env)->GetObjectClass(env, activity);
-
-	jmethodID methodID = (*env)->GetMethodID(env, clazz, "getAssets", "()Landroid/content/res/AssetManager;");
-	jobject assetManager = (*env)->CallObjectMethod(env, activity, methodID);
-	ASSET_MGR = AAssetManager_fromJava(env, assetManager);
-
-	(*env)->DeleteLocalRef(env, activity);
-	(*env)->DeleteLocalRef(env, clazz);
-}
-
-/*
-Frees the AAssetManager pointer.
-*/
-void android_free_asset_mgr() {
-	if (ASSET_MGR) free(ASSET_MGR);
-}
-
-/*
-Loads "filename" from the Android app assets, then dumps it to the internal storage.
-*/
-/*
-int android_load_asset_file(const char* filename) {
-	if (!ASSET_MGR) {
-		LOG_D("Getting asset manager...\n");
-		android_set_asset_mgr();
-	}
-	
-	AAsset* file = AAssetManager_open(ASSET_MGR, filename, AASSET_MODE_BUFFER);
-	size_t file_len = AAsset_getLength(file);
-
-	LOG_D("Asset file \"%s\" len: %d", filename, file_len);
-
-	// Allocate memory to read file
-	char* content = (char*)safe_malloc(file_len+1);
-	content[file_len] = '\0';
-
-	// Read file
-	AAsset_read(file, content, file_len);
-
-	SDL_RWops* fp = SDL_RWFromFile(filename, "w");
-	if (!fp) {
-		LOG_E("Error opening output fp in load_asset_file\n");
-		return -1;
-	}
-	SDL_RWwrite(fp, content, file_len, 1);
-	SDL_RWclose(fp);
-
-	// Free the memory allocated earlier
-	free(content);
-	return 0;
-}*/
-
 int android_load_asset_file(const char* filename) {
 	size_t size;
 	char* data = magics_read_file(filename, &size);

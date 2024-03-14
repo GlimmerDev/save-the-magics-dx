@@ -13,9 +13,6 @@ int mobile_set_screen_dims(Config* config);
 // ANDROID
 #ifdef __ANDROID__
 #include <android/log.h>
-#include <android/native_activity.h>
-#include <android/asset_manager.h>
-#include <android/asset_manager_jni.h>
 
 #define  LOG_TAG    "savethemagics-dx"
 #define  LOG_E(...)  __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
@@ -23,8 +20,6 @@ int mobile_set_screen_dims(Config* config);
 #define  LOG_D(...)  __android_log_print(ANDROID_LOG_DEBUG,LOG_TAG,__VA_ARGS__)
 #define  LOG_I(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
 
-void android_set_asset_mgr();
-void android_free_asset_mgr();
 int android_load_asset_file(const char* filename);
 
 // IPHONE
