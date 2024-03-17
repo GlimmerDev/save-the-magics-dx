@@ -37,7 +37,7 @@ Button* init_buttons(const double fps, GameState* state) {
 	if (!buttons) return NULL;
 	
 	const char* button_texts[NUM_MISC_BUTTONS+NUM_MENU_BUTTONS] = {
-        "Click!",          					// Magic
+        CLICK_STR,          				// Magic
 		"Next Page",       					// Next Page
 		NULL,               				// Face evil
 		NULL,               				// Meditate (menu)
@@ -423,7 +423,6 @@ Config* init_magics_config(const E_AspectType aspect, const double fps, const in
 	config->FPS = fps;
 	config->screen_center_x = config->screen_width/2;
 	config->screen_center_y = config->screen_height/2;
-	//SDL_RenderSetScale(config->renderer, config->screen_scale, config->screen_scale);
 
 	screen_center_set_cptr(config);
 	screen_dims_set_cptr(config);
@@ -454,6 +453,8 @@ Config* init_magics_config(const E_AspectType aspect, const double fps, const in
     	SDL_Quit();
     	return NULL;
 	}
+	//SDL_RenderSetLogicalSize(config->renderer, config->screen_width, config->screen_height);
+	//SDL_RenderSetScale(config->renderer, config->screen_scale, config->screen_scale);
 	config->save_version = SAVE_VERSION;
 	config->autosave_interval = autosave_interval;
 

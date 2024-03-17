@@ -5,12 +5,14 @@
 #include "include/enum.h"
 #include "include/util.h"
 
-// Platform-dependent
+// Platform-dependent includes
+// Windows
 #ifdef _WIN32
 #include <windows.h>
 #include <io.h>
 #define F_OK 0
-#define access _access
+#define access _access_s
+// POSIX
 #else
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -68,7 +70,8 @@ void* safe_malloc(size_t size) {
 }
 
 const char* human_format_to_float(long double num, const int precision) {
-	static const char* suffix[] = {"", "K", "M", "G", "T", "P", "E", "Z", "Y", "KY", "MY", "GY", "TY", "PY", "EY", "ZY", "YY", " WHAT THE...?"};
+	static const char* suffix[] = {"", "K", "M", "G", "T", "P", "E", "Z", "Y", "KY", \
+									"MY", "GY", "TY", "PY", "EY", "ZY", "YY", " WHAT THE...?"};
     static char res_buf[20];
 	
 	if (num == 0) {
@@ -131,14 +134,16 @@ int create_directory(const char* path) {
 }
 
 /*
- * Checks if a file exists. Uses SDL file I/O to ensure cross platform compatibility.
+ * Checks if a file exists and returns the result.
 */
 bool file_exists(const char* path) {
-	SDL_RWops* fp = SDL_RWFromFile(path, "rb");
-	if (fp) {
-		SDL_RWclose(fp);
-	}
-	return (fp != NULL);
+	bool res;
+    if (access(path, 0) == F_OK)
+        res = true;
+    else
+        res = false;
+	// LOG_D("File %s exists? %d", path, (int)res);
+	return res;
 }
 
 int _scr_center(const bool y, Config* const cptr, bool set_cptr) {
@@ -180,7 +185,8 @@ int screen_dims_set_cptr(Config* const cptr) {
 }
 
 double screen_ratio() {
-	return ((double)_scr_dims(false, NULL, false)) / ((double)_scr_dims(true, NULL, false));
+	return ((double)_scr_dims(false, NULL, false)) /
+			((double)_scr_dims(true, NULL, false));
 }
 
 int screen_width() {
@@ -293,13 +299,11 @@ int mobile_set_screen_dims(Config* config){
 		LOG_E("Error getting display mode");
 		return -1;
 	}
-	unsigned int ratio = floor(m.h/600) + 1;
+	unsigned int ratio = floor(m.h/600);
 	LOG_D("ScreenInfo: w: %d , h: %d, r: %d", m.w, m.h, ratio);
-	config->screen_width = m.w*ratio;
-	config->screen_height = m.h*ratio;
+	config->screen_width = m.w/ratio;
+	config->screen_height = m.h/ratio;
 	config->screen_scale = (double)ratio;
-	SDL_RenderSetLogicalSize(config->renderer, m.w, m.h);
-	SDL_RenderSetScale(config->renderer, 1/(float)ratio, 1/(float)ratio);
 	return 0;
 }
 #endif

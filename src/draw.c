@@ -667,7 +667,7 @@ void draw_menu_meditate(Config* config) {
 		Button* bptr = &(config->buttons[MEDI_B]);
 		draw_button_by_ref(bptr);
 		if (bptr->state == STATE_BTN_IDLE) {
-			draw_text("Click!", bptr->centerx, bptr->centery-15, FONT_RPG, 30, BLACK, config->renderer);
+			draw_text(CLICK_STR, bptr->centerx, bptr->centery-15, FONT_RPG, 30, BLACK, config->renderer);
 		}		
 	} else {
 		draw_button(MAGIC_B);

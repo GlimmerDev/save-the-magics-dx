@@ -1,16 +1,7 @@
 #ifndef MAGICS_ENUM_H
 #define MAGICS_ENUM_H
 
-// GENERAL
-#define VERSION_NUMBER "2.0"
-#define SAVE_VERSION 200
-#define FC_USE_SDL_GPU
-#define SDL_RENDER_SCALE_QUALITY 0
-#define MAX_PATH_LEN 1024
-
-#define MAGICS_ORG_STR "GlimmerDev"
-#define MAGICS_APP_STR "SaveTheMagicsDX"
-
+// Establish platform defines
 #if defined(__APPLE__) && defined(TARGET_OS_IPHONE)
 #define __IPHONE__
 #endif
@@ -19,9 +10,34 @@
 #define __MAGICSMOBILE__
 #endif
 
-#ifdef __ANDROID__
-#undef stderr
+// ********************
+// * PLATFORM DEPENDENT
+// ********************
+
+// MOBILE
+#ifdef __MAGICSMOBILE__
+#define CLICK_STR "Tap!"
+#define NUM_OPTIONS 1
+// DESKTOP
+#else
+#define CLICK_STR "Click!"
+#define NUM_OPTIONS 4
 #endif
+
+// ************************
+// * NON-PLATFORM DEPENDENT
+// ************************
+
+// GENERAL
+#define FC_USE_SDL_GPU
+#define SDL_RENDER_SCALE_QUALITY 0
+#define MAX_PATH_LEN 1024
+
+// APP INFO
+#define MAGICS_ORG_STR "GlimmerDev"
+#define MAGICS_APP_STR "SaveTheMagicsDX"
+#define VERSION_NUMBER "2.0"
+#define SAVE_VERSION 200
 
 // SCREEN DIMENSIONS
 #define SCREEN_WIDTH_W 1067
@@ -35,10 +51,9 @@
 #define DEFAULT_FPS 60
 #define DEFAULT_AUTOSAVE 2
 #define DEFAULT_ASPECT ASPECT_WIDE
-
 #define MAX_LAG_FRAMES 4
 
-// COLOR
+// COLORS
 #define NUM_COLORS 48
 typedef enum {
     BLACK,
@@ -91,7 +106,7 @@ typedef enum {
 	TRANSPARENT
 } E_ColorIndex;
 
-// SOUND
+// SOUNDS
 #define NUM_SOUNDS 10
 typedef enum {
 	UPGRADE_SND,
@@ -106,18 +121,12 @@ typedef enum {
 	EVIL_SHIP_SND
 } E_SoundIndex;
 
-// BUTTON
+// BUTTONS
 #define NUM_MISC_BUTTONS 23
 #define NUM_MENU_BUTTONS 5
 #define MENU_BUTTON_OFFSET NUM_MISC_BUTTONS
 #define OPTIONS_OFFSET OPT_AUTOSAVE_B
 #define NUM_BUTTONS NUM_MISC_BUTTONS+NUM_MENU_BUTTONS
-
-#ifdef __MAGICSMOBILE__
-#define NUM_OPTIONS 1
-#else
-#define NUM_OPTIONS 4
-#endif
 
 typedef enum {
 	MAGIC_B,
@@ -156,7 +165,7 @@ typedef enum {
 	STATE_BTN_CLICKED
 } E_ButtonState;
 
-// FONT
+// FONTS
 #define NUM_FONTS 1
 typedef enum {
 	FONT_RPG
@@ -165,7 +174,7 @@ typedef enum {
 #define MAX_FONT_SIZE 82
 #define NUM_PER_FONT (MAX_FONT_SIZE-MIN_FONT_SIZE)/2
 
-// UPGRADE
+// UPGRADES
 #define NUM_UPGRADES 55
 #define NUM_PRINCESSES 11
 #define NUM_INCANTATIONS 10
@@ -179,7 +188,6 @@ typedef enum {
 #define NUM_STARS 200
 
 // ENUMS
-
 typedef enum {
 	UPGRADE_TYPE_UPGRADE,
 	UPGRADE_TYPE_PRINCESS,
@@ -210,7 +218,7 @@ typedef enum {
 	BG_MENU_RECT
 } E_BGShapes;
 
-// EFFECT
+// EFFECTS
 typedef enum {
 	EFFECT_INCREASE_MPS,
 	EFFECT_MULT_ADD,
@@ -226,7 +234,7 @@ typedef enum {
 	EFFECT_DIV_INCANT_TIMERS
 } E_UpgradeEffect;
 
-// STATE
+// STATES
 typedef enum {
 	SCREEN_TITLE,
 	SCREEN_OPTIONS,
@@ -235,6 +243,7 @@ typedef enum {
 	SCREEN_ENDING,
 } E_StateScreen;
 
+// MENUS
 typedef enum {
 	MENU_UPGRADES,
 	MENU_PRINCESS,
@@ -263,12 +272,13 @@ typedef enum {
 	ERR_MAGIC_MISSILE
 } E_ErrorCode;
 
-// ASPECT RATIO
+// ASPECT RATIOS
 typedef enum {
 	ASPECT_WIDE,
 	ASPECT_CLASSIC
 } E_AspectType;
 
+// RELOAD STATES
 typedef enum {
 	RELOAD_STATE_NONE,
 	RELOAD_STATE_WRITECFG,
