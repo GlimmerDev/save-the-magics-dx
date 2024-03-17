@@ -20,16 +20,16 @@ const int AUTOSAVE_INTERVALS[] = { 0, 1, 2, 5, 10, 30 };
 
 // Sounds
 const char* SOUND_FILENAMES[NUM_SOUNDS] = {
-    "upgrade.ogg", 
-    "menu_button.ogg", 
-    "meditate.ogg", 
-    "medi_click.ogg", 
-    "incantation.ogg",
-    "incantation_ready.ogg",
-    "ending_explode_soft.ogg",
-    "ending_shoot_soft.ogg",
-    "engage_evil.ogg",
-    "evil_ship.ogg"
+    "upgrade.ogg",              // UPGRADE_SND
+    "menu_button.ogg",          // MENU_BUTTON_SND
+    "meditate.ogg",             // MEDITATE_SND
+    "medi_click.ogg",           // MEDI_CLICK_SND
+    "incantation.ogg",          // INCANT_SND
+    "incantation_ready.ogg",    // INCANT_READY_SND
+    "ending_explode_soft.ogg",  // END_EXPLODE_SND
+    "ending_shoot_soft.ogg",    // END_SHOOT_SND
+    "engage_evil.ogg",          // ENGAGE_EVIL_SND
+    "evil_ship.ogg"             // EVIL_SHIP_SND
 };
 
 Button* init_buttons(const double fps, GameState* state) {
@@ -590,6 +590,11 @@ int init_config_modules(Config* config) {
 	return 0;
 }
 
+/*
+ * Initializes the upgrade button shapes to align them into the 5x2 grid pattern
+ * used in the game. Saves time by pre-computing what page they fall on, and which
+ * slot on the page to place them in.
+ */
 int set_upgrade_rects(Upgrade* upgrades, const int n, const int start_offset) {
 	for (int i = 0; i < n; i+=10) {
 		for (int j = i; j < i+10; ++j) {
@@ -609,6 +614,11 @@ int set_upgrade_rects(Upgrade* upgrades, const int n, const int start_offset) {
 	return 0;
 }
 
+/*
+ * Gets a button by its index, using a static pointer to the buttons array that can
+ * be assigned during initialzation. Use the "get_button" and "get_button_set_bptr"
+ * helper functions instead of calling this directly.
+ */
 Button* _get_button(Button* bptr, bool set_bptr, const E_ButtonIndex b) {
 	static Button* buttons = NULL;
 	if (set_bptr) {
@@ -620,12 +630,48 @@ Button* _get_button(Button* bptr, bool set_bptr, const E_ButtonIndex b) {
 	return &(buttons[b]);
 }
 
+/*
+ * Gets a button by index, assuming the bptr has been registered using "get_button_set_bptr".
+ */
 Button* get_button(const E_ButtonIndex b) {
 	return _get_button(NULL, false, b);
 }
 
+/*
+ * Registers the button array to the _get_button function, for use with "get_button".
+ */
 Button* get_button_set_bptr(Button* bptr) {
 	return _get_button(bptr, true, -1);
+}
+
+/*
+ * Gets an upgrade by its index, using a static pointer to the upgrades array that can
+ * be assigned during initialzation. Use the "get_upgrade" and "get_upgrade_set_uptr"
+ * helper functions instead of calling this directly.
+ */
+Upgrade* _get_upgrade(Upgrade* uptr, bool set_uptr, const int u) {
+	static Upgrade* upgrades = NULL;
+	if (set_uptr) {
+		upgrades = uptr;
+		return NULL;
+	} else if (!upgrades) {
+		return NULL;
+	}
+	return &(upgrades[u]);
+}
+
+/*
+ * Gets an upgrade by index, assuming the uptr has been registered using "get_upgrade_set_uptr".
+ */
+Upgrade* get_upgrade(const int u) {
+	return _get_upgrade(NULL, false, u);
+}
+
+/*
+ * Registers the upgrades array to the _get_upgrade function, for use with "get_upgrade".
+ */
+Upgrade* get_upgrade_set_uptr(Upgrade* uptr) {
+	return _get_upgrade(uptr, true, -1);
 }
 
 void trigger_button(Button* bptr, Mix_Chunk** sounds, GameState* state) {
@@ -691,6 +737,12 @@ void trigger_upgrade(Upgrade* upgrade, Mix_Chunk** sounds, GameState* state) {
 			}
 			break;
 		case EFFECT_DIV_INCANT_TIMERS:
+			for (int i = INCANTATION_OFFSET; i < UPGRADES_END_OFFSET; ++i) {
+				get_upgrade(i)->cooldown /= upgrade->mult;
+			}
+			break;
+		default:
+			LOG_W("Unknown effect: %d\n", upgrade->effect);
 			break;
 	}
 

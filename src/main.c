@@ -37,17 +37,10 @@ void _magics_cleanup(Config* const cptr, bool set_cptr, bool quit_sdl) {
 	if (quit_sdl) {
 		SDL_Quit();
 	}
-
-	// free fonts
+	// cleanup misc memory
 	magics_font_cleanup();
-
-	// free shape vertices
 	bg_vertex_cleanup();
-
-	// free config modules
 	free_config_modules(config);
-
-	// free config
 	free(config);
 	
 	return;
@@ -64,10 +57,16 @@ void magics_cleanup_set_cptr(Config* const cptr) {
 void magics_register_config(Config* const cptr) {
 	magics_cleanup_set_cptr(cptr);
 	get_button_set_bptr(cptr->buttons);
+	get_upgrade_set_uptr(cptr->upgrades);
 	draw_button_set_ptrs(cptr);
 	get_fps_set_cptr(cptr);
 }
 
+/*
+ * Partially reloads the game by specifically re-initializing the state and
+ * upgrade components of the config. Useful on mobile when we need to return
+ * to title without quitting.
+ */
 int magics_soft_reload(Config* config) {
 	free_state(config->state);
 	free_upgrades(config->upgrades);
@@ -93,44 +92,59 @@ int magics_soft_reload(Config* config) {
 	return 0;
 }
 
+/*
+ * Completely reloads the game by cleaning up everything (as if exiting),
+ * and re-initializing. Useful for when calculation-dependent things like
+ * resolution and FPS are changed.
+ */
 Config* magics_hard_reload(E_AspectType aspect, double fps, int autosave_interval, float* time_step, float* max_accumulator) {
+	// perform cleanup, but without quitting SDL
 	_magics_cleanup(NULL, false, false);
 	
+	// get a new config
 	Config* new_config = init_magics_config(aspect, fps, autosave_interval);
 	if (!new_config) {
 		LOG_E("Error: could not create reloaded config\n");
 		return NULL;
 	}
-
 	magics_register_config(new_config);
     
 	init_fonts(new_config->renderer);
 	init_shapes(new_config);
 	
+	// compensate for new FPS value
 	(*time_step) = 1.0f / new_config->FPS;
 	(*max_accumulator) = (*time_step) * MAX_LAG_FRAMES;
 	
 	return new_config;
 }
 
+/*
+ * Checks if a hard reload was requested via the config's reload_state.
+ * If so, return true.
+ */
 bool check_do_reload(Config* config){
 	return (config->reload_state == RELOAD_STATE_EXECUTE);
 }
 
+/*
+ * Some platforms require main, while others require SDL_main.
+ * This should ensure that all platforms are happy.
+ */
 #if !defined(__MAGICSMOBILE__) && !defined(main)
 int main(int argc, char *argv[]) {
 	return SDL_main(argc, argv);
 }
-
 #endif
 
 int SDL_main(int argc, char *argv[]) {
 	// Init SDL & SDL modules
 	LOG_D("Initializing SDL...\n");
 	SDL_Init(SDL_INIT_VIDEO);
+	LOG_D("Initializing SDL_mixer...\n");
     Mix_Init(MIX_INIT_OGG);
 	if( Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 512) == -1 ) { 
-		LOG_E("Error: could not initialize audio mixer\n");
+		LOG_E("Error: could not initialize mixer\n");
 		SDL_Quit();
 		return -1; 
 	}
@@ -138,22 +152,22 @@ int SDL_main(int argc, char *argv[]) {
 	// Seed random
 	srand(time(NULL));
 
-	LOG_D("Checking config file...\n");
+	LOG_D("Checking for config file...\n");
 	if (!config_file_exists()) {
 		create_default_config_file();
 	}
 	LOG_D("Initializing config...\n");
 	Config* config = load_config_from_file();
 	if (!config) {
-		LOG_E("Error: could not create magics config\n");
+		LOG_E("Error: could not load magics config\n");
     	return -1;
 	}
-
-	create_save_path();
-	
+	// Once we have a config, make sure we clean up at exit
 	LOG_D("Registering config ptr in convenience functions...\n");
 	magics_register_config(config);
 	atexit(magics_cleanup);
+
+	create_save_path();
 	
 	LOG_D("Initializing fonts...\n");
 	init_fonts(config->renderer);
@@ -212,7 +226,7 @@ int SDL_main(int argc, char *argv[]) {
 			// *** HANDLE EVENTS ***
 			// *********************
 			
-			// handle SDL events
+			// SDL events
 			SDL_Event event;
 			while (SDL_PollEvent(&event)) {
 				handle_event_sdl(event, &mouse_pos, config, &running, &upgrade_page, &princess_page);
@@ -222,24 +236,29 @@ int SDL_main(int argc, char *argv[]) {
 			update_button_timers(config->buttons, config->upgrades, config->state);
 			update_ending_timers(config);
 			if (config->state->current_screen == SCREEN_GAME_LOOP) {
+				// if incantations unlocked, update their timers
+				// per classic behavior, this applies even when meditating
 				if (!(get_button(MENU_INCANT_B)->locked)) {
 					update_incantation_timers(config->upgrades, config->sounds);
 				}
 				update_autosave_timer(config, &autosave_timer);
-				// meditation-related 
+				// if meditating, update meditation time left
 				if (config->state->is_meditating) {
 					update_meditate_timer(config->state);
+					// bonus multiplier will decrease at 1/10 speed
 					if (config->state->meditate_multiplier > 1.0) {
 						config->state->meditate_multiplier *= (1.0 - ((0.0005 * 30) / get_fps()));
 					}
-				} else if (!(get_button(MENU_MEDI_B))->locked) {
+				}
+				// else, if meditation is unlocked, update meditate cooldown
+				else if (!(get_button(MENU_MEDI_B))->locked) {
 					update_meditate_cooldown(config->state, config->sounds);
+					// decrease bonus multiplier by regular rate
 					if (config->state->meditate_multiplier > 1.0) {
 						config->state->meditate_multiplier *= (1.0 - ((0.005 * 30) / get_fps()));
 					}
 				}
-				
-				// highlight selected menu button
+				// highlight currently selected menu button
 				for (int i = 0; i < NUM_MENU_BUTTONS; ++i) {
 					if (config->state->current_menu == i) {
 						config->buttons[MENU_BUTTON_OFFSET+i].color = B_MENU+1;
@@ -257,7 +276,7 @@ int SDL_main(int argc, char *argv[]) {
 			// update starfield
 			update_starfield(config->state);
 
-			// check buttons that are ready to trigger actions
+			// check buttons that are ready to trigger their actions
 			check_done_buttons(config, &upgrade_page, &princess_page, &running, &save_slot);
 			
 			// *************************
@@ -270,8 +289,10 @@ int SDL_main(int argc, char *argv[]) {
 		
 			clear_screen(config->renderer, BACKGROUND);
 			
+			// draw planet, meditation, or ending background
 			draw_background(config);
 			
+			// Draw FPS and version info
 			draw_text(version_string, config->screen_width-130, config->screen_height-24, FONT_RPG, 20, WHITE, config->renderer);
 			draw_text(fps_buf, 18, 2, FONT_RPG, 18, PLANET3, config->renderer);
 			
@@ -313,6 +334,7 @@ int SDL_main(int argc, char *argv[]) {
 		}
 
 		// On mobile, we must avoid quitting, as this is considered bad practice.
+		// Instead we "soft reload", and return to title screen.
 		#ifdef __MAGICSMOBILE__
 		if (!running) {
 			running = true;

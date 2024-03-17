@@ -151,6 +151,10 @@ Button* _get_button(Button* cptr, bool set_bptr, const E_ButtonIndex b);
 Button* get_button(const E_ButtonIndex b);
 Button* get_button_set_bptr(Button* bptr);
 
+Upgrade* _get_upgrade(Upgrade* uptr, bool set_uptr, const int u);
+Upgrade* get_upgrade(const int u);
+Upgrade* get_upgrade_set_uptr(Upgrade* uptr);
+
 void trigger_button(Button* bptr, Mix_Chunk** sounds, GameState* state);
 
 void trigger_menu_button(Button* bptr, Mix_Chunk** sounds);

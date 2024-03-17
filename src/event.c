@@ -66,14 +66,20 @@ void update_button_timers(Button* const buttons, Upgrade* const upgrades, GameSt
 }
 
 void update_incantation_timers(Upgrade* const upgrades, Mix_Chunk** const sounds) {
+	bool play_sound = false;
 	for (int i = 0; i < NUM_INCANTATIONS; ++i) {
 		if (upgrades[i+INCANTATION_OFFSET].cooldown > 0) {
 			--upgrades[i+INCANTATION_OFFSET].cooldown;
 		} else if (upgrades[i+INCANTATION_OFFSET].button->locked) {
 			upgrades[i+INCANTATION_OFFSET].button->locked = 0;
-			Mix_PlayChannel(-1, sounds[INCANT_READY_SND], 0);
+			play_sound = true;
 		}
 	}
+	if (!play_sound) {
+		return;
+	}
+	// play once for all incantations, to avoid stacking SFX (like on game load)
+	Mix_PlayChannel(-1, sounds[INCANT_READY_SND], 0);
 }
 
 void update_meditate_cooldown(GameState* const state, Mix_Chunk** const sounds) {

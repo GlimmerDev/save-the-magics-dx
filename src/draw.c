@@ -836,7 +836,7 @@ void draw_screen_options(Config* config) {
 
 void draw_screen_save(Config* config) {
 	Button* bptr = NULL;
-	char save_slot_buf[64] = "";
+	static char save_slot_buf[256] = "";
 	
 	if (config->state->current_menu >= MENU_SV_CNF_QUIT) {
 		draw_text("Would you like to save your efforts? If not, progress may be lost!", \
@@ -860,7 +860,6 @@ void draw_screen_save(Config* config) {
 				const char* time_str = time_to_time_str(&(config->saves[i].last_saved));
 				draw_button_by_ref(bptr);
 				if (i > 0) {
-					snprintf(save_slot_buf, sizeof(save_slot_buf), "%d. %s", i, time_str);
 					snprintf(save_slot_buf, sizeof(save_slot_buf), "%d. %s", i, time_str);
 				} else {
 					snprintf(save_slot_buf, sizeof(save_slot_buf), "AUTO. %s", time_str);
