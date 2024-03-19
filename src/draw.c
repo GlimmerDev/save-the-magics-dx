@@ -852,24 +852,14 @@ void draw_screen_save(Config* config) {
 			draw_button(SAVE_YES_B);
 			draw_button(SAVE_NO_B);
 	} else {
-		bool locked;
 		int start_slot = (config->state->current_menu == MENU_SV_SLOT);
 		for (int i = start_slot; i < 4; ++i) {
 			bptr = &(config->buttons[SAVE_0_B+i]);
-			if (config->saves[i].exists) {
-				const char* time_str = time_to_time_str(&(config->saves[i].last_saved));
-				draw_button_by_ref(bptr);
-				if (i > 0) {
-					snprintf(save_slot_buf, sizeof(save_slot_buf), "%d. %s", i, time_str);
-				} else {
-					snprintf(save_slot_buf, sizeof(save_slot_buf), "AUTO. %s", time_str);
-				}
-			} else {
+			if (!config->saves[i].exists) {
 				bptr->color = LOCKED;
-				draw_button_by_ref(bptr);
-				snprintf(save_slot_buf, sizeof(save_slot_buf), "%d. NO SAVE DATA", i);
 			}
-			draw_text(save_slot_buf, bptr->centerx, bptr->centery-12, FONT_RPG, 24, WHITE, config->renderer);
+			draw_button_by_ref(bptr);
+			draw_text(config->saves[i].display_str, bptr->centerx, bptr->centery-12, FONT_RPG, 24, WHITE, config->renderer);
 		}
 	}
 }

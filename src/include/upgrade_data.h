@@ -53,12 +53,12 @@ const char* UPGRADE_DATA[] = {
 	"The Fuzzies",			"See, I told you so!",			"114696000",  "0",	"947991600000",		"36",	"0",	"0",	"0",
 	"Boykisser",			"He sure loves to kiss.",		"344088000",  "0",	"4739958000000",	"36",	"0",	"0",	"0",
 	"Grace of Ace",			"Pure, distilled romance.",		"1032264000", "0",	"23699790000000",	"36",	"0",	"0",	"0",
-	"??? of Love",		"",								"3096792000", "0",	"118498950000000",	"36",	"0",	"0",	"0",
-	"Flying Blahaj",		"Explores the skies.",			"229392000",  "0",	"189598320000",		"38",	"0",	"0",	"0",
-	"Harmonic Sword",		"Unlocks true connection.",		"688176000",  "0",	"947991600000",		"38",	"0",	"0",	"0",
-	"Friendship",			"Incredibly powerful magics.",	"2064528000", "0",	"4739958000000",	"38",	"0",	"0",	"0",
-	"Harmony",				"What could be more magic?",	"6193584000", "0",	"23699790000000",	"38",	"0",	"0",	"0",
-	"The Core",				"Soul of the whole planet.",	"18580752000","0",	"118498950000000",	"38",	"0",	"0",	"0",
+	"Adore Corps",			"Yes, they all love YOU!",		"3096792000", "0",	"118498950000000",	"36",	"0",	"0",	"0",
+	"Flying Blahaj",		"Explores the skies.",			"229392000",  "0",	"592494750000000",  "38",	"0",	"0",	"0",
+	"Harmonic Sword",		"Unlocks true connection.",		"688176000",  "0",	"2962473800000000",	"38",	"0",	"0",	"0",
+	"Friendship",			"Incredibly powerful magics.",	"2064528000", "0",	"14812369000000000","38",	"0",	"0",	"0",
+	"Harmony",				"What could be more magic?",	"6193584000", "0",	"74061845000000000","38",	"0",	"0",	"0",
+	"The Core",				"Soul of the whole planet.",	"18580752000","0", "370309230000000000","38",	"0",	"0",	"0",
 	// END UPGRADES
 	// START PRINCESSES
 	// NAME 				DESCRIPTION 					MPS          MULT 	COST				COLOR	EFFECT	TYPE	COOLDOWN
@@ -68,11 +68,11 @@ const char* UPGRADE_DATA[] = {
 	"Ice Princess",			"Hasn't thawed since 2003.",	"0",		"1.50",	"214000000",		"24",	"4",	"1",	"0",
 	"Fire Princess",		"Roaming ruler of the flame.",	"0",		"0.15",	"4380000000",		"28",	"1",	"1",	"0",
 	"Dark Princess",		"Fight evil with more evil.",	"0",		"1.15",	"90240000000",		"32",	"2",	"1",	"0",
-	"Desert Princess",		"Leader amongst the barrens.",	"5000",		"0",	"513300000000",		"30",	"3",	"1",	"0",
+	"Desert Princess",		"Leader amongst the barrens.",	"50000",	"0",	"513300000000",		"30",	"3",	"1",	"0",
 	"Genderfluid Prince",	"Fabulous double agent.",		"0",		"1.75",	"3260000000000",	"34",	"4",	"1",	"0",
 	"Mystic Princess",		"Queen of all that sparkles.",	"0",		"0.25",	"19750000000000",	"18",	"1",	"1",	"0",
-	"Love Princess",        "Some say she's all you need.", "0",        "1.00",	"118500000000000",	"36",	"1",	"1",	"0",
-	"Unity Princess",		"The key to true harmony.",		"0",		"1.20", "711000000000000",	"38",	"2",	"1",	"0",
+	"Love Princess",        "Some say she's all you need.", "100000000","0",    "118500000000000",	"36",	"3",	"1",	"0",
+	"Unity Princess",		"The key to true harmony.",		"0",		"1.50", "711000000000000",	"38",	"2",	"1",	"0",
 	// END PRINCESSES
 	// START INCANTATIONS
 	// NAME 				DESCRIPTION 					MPS          MULT 	COST				COLOR	EFFECT	TYPE	COOLDOWN

@@ -46,7 +46,7 @@ void load_save(Config* config, const unsigned short slot);
 
 void check_for_saves(Config* config);
 
-unsigned int calc_magic_missile(const long timestamp, const Config* const config);
+int calc_magic_missile(const long timestamp, const Config* const config);
 
 Config* load_config_from_file();
 int create_config_file(const unsigned int autosave_interval, const double fps, const E_AspectType aspect);

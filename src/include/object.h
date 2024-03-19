@@ -81,6 +81,7 @@ typedef struct GameState {
 typedef struct SaveSlot {
 	char* path;
 	bool exists;
+	char* display_str;
 	unsigned int save_version;
 	time_t last_saved;
 	unsigned int win_count;

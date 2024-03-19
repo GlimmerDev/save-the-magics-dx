@@ -1,6 +1,7 @@
 #include <jansson.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <math.h>
 #include <time.h>
 #include "include/save.h"
@@ -231,7 +232,7 @@ json_t* create_save_json(Config* config) {
 	json_object_set_new(j_root, "upgrades", j_upgrades);
 	
 	long timestamp = (long)time(NULL);
-	unsigned int magic_missile = calc_magic_missile(timestamp, config);
+	int magic_missile = calc_magic_missile(timestamp, config);
 	
 	json_object_set_new(j_root, "save_version", json_integer(config->save_version));
 	json_object_set_new(j_root, "last_saved", json_integer(timestamp));
@@ -320,7 +321,16 @@ void load_save_json_state(json_t* save_data, Config* config) {
 	state->magic_per_second = json_integer_value(json_object_get(j_state, "magic_per_second"));
 	state->magic_multiplier = json_real_value(json_object_get(j_state, "magic_multiplier"));
 	state->meditate_cooldown = json_integer_value(json_object_get(j_state, "meditate_cooldown"))*get_fps();
+	// If meditate cooldown == 0, set it to 1 second instead
+	// Helps with SFX overlapping on load
+	if (!state->meditate_cooldown) {
+		state->meditate_cooldown = get_fps();
+	}
 	state->meditate_timer = json_integer_value(json_object_get(j_state, "meditate_timer"))*get_fps();
+	// If game was quit mid-meditate
+	if (state->meditate_timer < DEFAULT_MEDI_TIMER*get_fps()) {
+		state->meditate_timer = DEFAULT_MEDI_TIMER*get_fps();
+	}
 	state->upgrade_max = json_integer_value(json_object_get(j_state, "upgrade_max"));
 	state->princess_max = json_integer_value(json_object_get(j_state, "princess_max"));
 	state->win_count = json_integer_value(json_object_get(j_state, "win_count"));
@@ -396,6 +406,8 @@ char* create_save_path() {
 }
 
 void load_save_properties(Config* config, const unsigned short slot) {
+	char save_slot_buf[256] = "NO SAVE DATA";
+
 	if (!config->saves[slot].path) {
 		return;
 	}
@@ -403,6 +415,7 @@ void load_save_properties(Config* config, const unsigned short slot) {
 	config->saves[slot].exists = file_exists(config->saves[slot].path);
 	config->buttons[SAVE_0_B+slot].locked = !config->saves[slot].exists;
 	if (!(config->saves[slot].exists)){
+		config->saves[slot].display_str = strdup(save_slot_buf);
 		return;
 	}
 	
@@ -411,6 +424,19 @@ void load_save_properties(Config* config, const unsigned short slot) {
 	
 	config->saves[slot].last_saved = json_integer_value(json_object_get(save_data, "last_saved"));
 	config->saves[slot].win_count = json_integer_value(json_object_get(j_state, "win_count"));
+
+	const char* time_str = time_to_time_str(&(config->saves[slot].last_saved));
+	if (slot) {
+		snprintf(save_slot_buf, sizeof(save_slot_buf), "%d. %s", slot, time_str);
+	}
+	else {
+		snprintf(save_slot_buf, sizeof(save_slot_buf), "AUTO. %s", time_str);
+	}
+	/*if (config->saves[slot].win_count) {
+		int end = strlen(save_slot_buf);
+		snprintf(save_slot_buf+end, sizeof(save_slot_buf)-end, " (%d)", config->state->win_count+1);
+	}*/
+	config->saves[slot].display_str = strdup(save_slot_buf);
 	
 	// indicate completed save games
 	if (config->saves[slot].win_count) {
@@ -469,13 +495,13 @@ void check_for_saves(Config* config) {
 	}
 }
 
-unsigned int calc_magic_missile(const long timestamp, const Config* const config) {
+int calc_magic_missile(const long timestamp, const Config* const config) {
 	long r = 0;
 	for (int i = 0; i < UPGRADES_END_OFFSET; ++i) {
 		r += config->upgrades[i].count;
 	}
 	r ^= ((long)config->state->magic_count + (long)config->state->magic_per_second + timestamp);
-	return (unsigned int)(r % 69420);
+	return (int)(r % 69420);
 }
 
 Config* load_config_from_file() {

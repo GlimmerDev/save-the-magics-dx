@@ -505,6 +505,9 @@ void free_config_modules(Config* config) {
 		if (config->saves[i].path) {
 			free(config->saves[i].path);
 		}
+		if (config->saves[i].display_str) {
+			free(config->saves[i].display_str);
+		}
 	}
 	if (config->saves) {
 		free(config->saves);

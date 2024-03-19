@@ -300,10 +300,11 @@ void check_done_buttons(Config* const config, unsigned int* const upgrade_page, 
 					state->magic_count = 0.0;
 					Mix_PlayChannel(-1, config->sounds[END_SHOOT_SND], 0);
 				} else if (state->current_menu == MENU_END_PROMPT1) {
-					++state->current_menu;
+					++(state->current_menu);
 				} else if (state->current_menu == MENU_END_PROMPT2) {
                     state->current_menu = MENU_END_FAIL + check_ending_success(config);
 				} else if (state->current_menu == MENU_END_WIN2) {
+					++(state->win_count);
 					state->current_screen = SCREEN_SAVE;
 					state->current_menu = MENU_SV_ENDING;
 				}
