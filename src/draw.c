@@ -59,6 +59,10 @@ SDL_Color COL[]  = {
 	(SDL_Color){255, 181, 54, 255},	 // B_MENU (selected)
 	(SDL_Color){255, 181, 54, 255},	 // B_SAVE_CLEAR (idle)
 	(SDL_Color){255, 228, 181, 255}, // B_SAVE_CLEAR (selected)
+	(SDL_Color){147, 208, 222, 255}, // B_SAVE_CL (idle)
+	(SDL_Color){88, 183, 204, 255},  // B_SAVE_CL (selected)
+	(SDL_Color){222, 161, 147, 255}, // B_SAVE_CLEAR_CL (idle)
+	(SDL_Color){186, 134, 123, 255}, // B_SAVE_CLEAR_CL (selected)
 	(SDL_Color){35, 38, 47, 255},	 // STAR1
 	(SDL_Color){38, 38, 47, 255},    // STAR2
 	(SDL_Color){38, 30, 27, 255},    // STAR3
@@ -192,7 +196,7 @@ void SDL_RenderFillTriangle(SDL_Renderer* renderer, const E_ColorIndex color, in
 // *** DRAW-RELATED INIT FUNCTIONS ***
 
 int init_fonts(SDL_Renderer* renderer) {
-	FC_Font** fonts = (FC_Font**)malloc(sizeof(FC_Font*) * NUM_PER_FONT * NUM_FONTS);
+	FC_Font** fonts = (FC_Font**)safe_calloc(NUM_PER_FONT * NUM_FONTS + 1, sizeof(FC_Font*));
 	if (!fonts) return -1;
 
 	char path_buf[MAX_PATH_LEN];
@@ -214,7 +218,11 @@ int init_fonts(SDL_Renderer* renderer) {
 				free(fonts);
 				return -1;
 			}
-			FC_LoadFont(fonts[offset], renderer, path_buf, j*2+MIN_FONT_SIZE, COL[WHITE], TTF_STYLE_NORMAL);
+			LOG_D("Initializing font[%d]\n", offset);
+			if (!FC_LoadFont(fonts[offset], renderer, path_buf, j*2+MIN_FONT_SIZE, COL[WHITE], TTF_STYLE_NORMAL)) {
+				LOG_E("Failed to load font[%d] from %s\n", offset, path_buf);
+				return -1; // Add cleanup code here if necessary
+			}
 		}
 	}
 	FONTS = fonts;
@@ -222,9 +230,11 @@ int init_fonts(SDL_Renderer* renderer) {
 }
 
 void magics_font_cleanup() {
-	for (int i = 0; i < NUM_FONTS*NUM_PER_FONT; ++i) {
+	for (int i = 0; i < NUM_PER_FONT * NUM_FONTS; ++i) {
+		LOG_D("Freeing font[%d]: %p\n", i, FONTS[i]);
 		FC_FreeFont(FONTS[i]);
 	}
+	LOG_D("Freeing fonts pointer...\n");
 	free(FONTS);
 }
 
@@ -750,8 +760,9 @@ void draw_screen_ending(SDL_Renderer* renderer, Config* config) {
 
 				int ring_r = (int)(ending->explosion_radius / 5.5f);
 				//set_draw_color(renderer, EXPL2);
-				SDL_RenderFillRing(renderer, screen_center_x(), screen_center_y(), ring_r, ring_r - 80);
-				SDL_RenderFillRing(renderer, screen_center_x(), screen_center_y(), ring_r*4, ring_r*4 - 40);
+				// RenderFillRing is slow as fuck... will try to improve this in the future. For now, disable it.
+				//SDL_RenderFillRing(renderer, screen_center_x(), screen_center_y(), ring_r, ring_r - 80);
+				//SDL_RenderFillRing(renderer, screen_center_x(), screen_center_y(), ring_r*4, ring_r*4 - 40);
 			} else {
 				SDL_SetRenderTarget(renderer, ending->expl_tx1);
 				clear_screen(renderer, TRANSPARENT);

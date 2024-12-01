@@ -32,17 +32,22 @@ void _magics_cleanup(Config* const cptr, bool set_cptr, bool quit_sdl) {
 	}
 	
 	// quit SQL
+	LOG_D("Destroying renderer...\n");
 	SDL_DestroyRenderer(config->renderer);
+	LOG_D("Destroying window...\n");
     SDL_DestroyWindow(config->window);
 	if (quit_sdl) {
 		SDL_Quit();
 	}
 	// cleanup misc memory
+	LOG_D("Clean up fonts...\n");
 	magics_font_cleanup();
+	LOG_D("Clean up shape vertices...\n");
 	bg_vertex_cleanup();
+	LOG_D("Clean up config modules...\n");
 	free_config_modules(config);
 	free(config);
-	
+	LOG_D("Clean up complete!\n");
 	return;
 }
 
@@ -293,7 +298,7 @@ int SDL_main(int argc, char *argv[]) {
 			draw_background(config);
 			
 			// Draw FPS and version info
-			draw_text(version_string, config->screen_width-130, config->screen_height-24, FONT_RPG, 20, WHITE, config->renderer);
+			draw_text(version_string, config->screen_width-140, config->screen_height-24, FONT_RPG, 20, WHITE, config->renderer);
 			draw_text(fps_buf, 18, 2, FONT_RPG, 18, PLANET3, config->renderer);
 			
 			switch(config->state->current_screen) {

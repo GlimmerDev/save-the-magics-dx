@@ -423,8 +423,9 @@ void load_save_properties(Config* config, const unsigned short slot) {
 	json_t* j_state = json_object_get(save_data, "state");
 	
 	config->saves[slot].last_saved = json_integer_value(json_object_get(save_data, "last_saved"));
+	config->saves[slot].save_version = json_integer_value(json_object_get(save_data, "save_version"));
 	config->saves[slot].win_count = json_integer_value(json_object_get(j_state, "win_count"));
-
+	
 	const char* time_str = time_to_time_str(&(config->saves[slot].last_saved));
 	if (slot) {
 		snprintf(save_slot_buf, sizeof(save_slot_buf), "%d. %s", slot, time_str);
@@ -438,8 +439,20 @@ void load_save_properties(Config* config, const unsigned short slot) {
 	}*/
 	config->saves[slot].display_str = strdup(save_slot_buf);
 	
-	// indicate completed save games
-	if (config->saves[slot].win_count) {
+	// indicate special save colors
+	// classic save
+	if (config->saves[slot].save_version < 200) {
+		// win count > 0
+		if (config->saves[slot].win_count) {
+			config->buttons[SAVE_0_B+slot].color = B_SAVE_CLEAR_CL;
+		}
+		// normal
+		else {
+			config->buttons[SAVE_0_B+slot].color = B_SAVE_CL;
+		}
+	}
+	// non-classic, win count > 0
+	else if (config->saves[slot].win_count) {
 		config->buttons[SAVE_0_B+slot].color = B_SAVE_CLEAR;
 	}
 	
@@ -477,6 +490,7 @@ void load_save(Config* config, const unsigned short slot) {
 	
 	long last_saved = json_integer_value(json_object_get(save_data, "last_saved"));
 	#ifndef DEBUG
+	// Enforce magic missile check for non-classic saves
 	if (save_version >= 200) {
 		unsigned int magic_missile = json_integer_value(json_object_get(save_data, "magic_missile"));
 		if (magic_missile != calc_magic_missile(last_saved, config)) {

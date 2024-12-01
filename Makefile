@@ -9,14 +9,14 @@ OBJ_NAME = magics
 
 # Windows
 ifeq ($(OS),Windows_NT)
-	INCLUDE_PATHS = -IC:\mingw_lib\include -IC:\mingw_lib\include\SDL2
-	LIBRARY_PATHS = -LC:\mingw_lib\lib
+	INCLUDE_PATHS = -IC:\mingw64\include -IC:\mingw64\include\SDL2
+	LIBRARY_PATHS = -LC:\mingw64\lib
 
 	# -w suppresses all warnings
 	# -Wl,-subsystem,windows gets rid of the console window
 	COMPILER_FLAGS = -D__USE_MINGW_ANSI_STDIO
 
-	LINKER_FLAGS = -lmingw32 -lSDL2main -lSDL2 -lSDL2_mixer -lSDL2_ttf -lSDL_FontCache -ljansson 
+	LINKER_FLAGS = -lmingw32 -lSDL2main -lSDL2 -lSDL2_mixer -lSDL2_ttf -lfontcache -ljansson 
 # Unix-like (MacOS, Linux)
 else
 	INCLUDE_PATHS = -I/usr/local/include -I/usr/local/include/SDL2

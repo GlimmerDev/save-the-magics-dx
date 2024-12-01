@@ -36,7 +36,7 @@
 // APP INFO
 #define MAGICS_ORG_STR "GlimmerDev"
 #define MAGICS_APP_STR "SaveTheMagicsDX"
-#define VERSION_NUMBER "2.0"
+#define VERSION_NUMBER "2.0-b1"
 #define SAVE_VERSION   200
 
 // SCREEN DIMENSIONS
@@ -54,7 +54,7 @@
 #define MAX_LAG_FRAMES        4
 
 // COLORS
-#define NUM_COLORS 48
+#define NUM_COLORS 52
 typedef enum {
     BLACK,
     WHITE,
@@ -98,6 +98,10 @@ typedef enum {
     B_MENU_S,
 	B_SAVE_CLEAR,
 	B_SAVE_CLEAR_S,
+	B_SAVE_CL,
+	B_SAVE_CL_S,
+	B_SAVE_CLEAR_CL,
+	B_SAVE_CLEAR_CL_S,
     STAR1,
     STAR2,
     STAR3,
