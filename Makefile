@@ -17,7 +17,16 @@ ifeq ($(OS),Windows_NT)
 	COMPILER_FLAGS = -D__USE_MINGW_ANSI_STDIO
 
 	LINKER_FLAGS = -lmingw32 -lSDL2main -lSDL2 -lSDL2_mixer -lSDL2_ttf -lfontcache -ljansson 
-# Unix-like (MacOS, Linux)
+
+# macOS
+else ifeq ($(shell uname),Darwin)
+	CC = clang
+	INCLUDE_PATHS = -I/usr/local/include -I/usr/local/include/SDL2
+	LIBRARY_PATHS = -L/usr/local/lib
+	COMPILER_FLAGS = -Wall -Wextra
+	LINKER_FLAGS = -lSDL2main -lSDL2 -lSDL2_mixer -lSDL2_ttf -lfontcache -ljansson -lm -framework Cocoa -framework CoreFoundation
+
+# Linux
 else
 	INCLUDE_PATHS = -I/usr/local/include -I/usr/local/include/SDL2
 	COMPILER_FLAGS = 
