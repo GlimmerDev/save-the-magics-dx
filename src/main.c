@@ -31,6 +31,14 @@ void _magics_cleanup(Config* const cptr, bool set_cptr, bool quit_sdl) {
 		return;
 	}
 	
+	// clean up misc memory
+	LOG_D("Clean up fonts...\n");
+	magics_font_cleanup();
+	LOG_D("Clean up shape vertices...\n");
+	bg_vertex_cleanup();
+	LOG_D("Clean up config modules...\n");
+	free_config_modules(config);
+
 	// quit SQL
 	LOG_D("Destroying renderer...\n");
 	SDL_DestroyRenderer(config->renderer);
@@ -39,14 +47,10 @@ void _magics_cleanup(Config* const cptr, bool set_cptr, bool quit_sdl) {
 	if (quit_sdl) {
 		SDL_Quit();
 	}
-	// cleanup misc memory
-	LOG_D("Clean up fonts...\n");
-	magics_font_cleanup();
-	LOG_D("Clean up shape vertices...\n");
-	bg_vertex_cleanup();
-	LOG_D("Clean up config modules...\n");
-	free_config_modules(config);
+	
+	LOG_D("Free config ptr...\n");
 	free(config);
+
 	LOG_D("Clean up complete!\n");
 	return;
 }
@@ -102,12 +106,12 @@ int magics_soft_reload(Config* config) {
  * and re-initializing. Useful for when calculation-dependent things like
  * resolution and FPS are changed.
  */
-Config* magics_hard_reload(E_AspectType aspect, double fps, int autosave_interval, float* time_step, float* max_accumulator) {
+Config* magics_hard_reload(E_AspectType aspect, double fps, int autosave_interval, bool quitonsave, float* time_step, float* max_accumulator) {
 	// perform cleanup, but without quitting SDL
 	_magics_cleanup(NULL, false, false);
 	
 	// get a new config
-	Config* new_config = init_magics_config(aspect, fps, autosave_interval);
+	Config* new_config = init_magics_config(aspect, fps, autosave_interval, quitonsave);
 	if (!new_config) {
 		LOG_E("Error: could not create reloaded config\n");
 		return NULL;
@@ -207,10 +211,10 @@ int SDL_main(int argc, char *argv[]) {
 	
 	while (running) {
 		if (check_do_reload(config)) {
-			LOG_D("***\nHard reloading...\n");
+			LOG_I("***Hard reloading***\n");
 			config = magics_hard_reload(config->aspect, get_fps(), config->autosave_interval, 
-										&TIME_STEP, &MAX_ACCUMULATOR);
-			LOG_D("***\nHard reload complete.\n");
+										config->quitonsave, &TIME_STEP, &MAX_ACCUMULATOR);
+			LOG_I("***Hard reload complete!***\n");
 		}
 
 		unsigned int curr_ticks = SDL_GetTicks();
@@ -343,14 +347,19 @@ int SDL_main(int argc, char *argv[]) {
 		#ifdef __MAGICSMOBILE__
 		if (!running) {
 			running = true;
-			LOG_D("***\nSoft reloading...\n");
+			config->reload_state = RELOAD_STATE_EXECUTE_SOFT;
+		}
+		#endif
+		if (config->reload_state == RELOAD_STATE_EXECUTE_SOFT) {
+			LOG_I("***Soft reloading***\n");
 			if (magics_soft_reload(config) < 0) {
 				LOG_E("Error during main loop soft reload!\n");
 				return -1;
 			}
-			LOG_D("***\nSoft reload complete.\n");
+			config->reload_state = RELOAD_STATE_NONE;
+			LOG_D("***Soft reload complete!***");
 		}
-		#endif
+
 	}
 
     return 0;

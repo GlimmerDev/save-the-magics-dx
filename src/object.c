@@ -58,6 +58,7 @@ Button* init_buttons(const double fps, GameState* state) {
 		"Autosave Interval",				// Options - autosave interval
 		"Aspect Ratio",						// Options - aspect ratio
 		"Framerate",						// Options - FPS
+		"Quit On Save",				        // Options - post save behavior
 		"Import Classic Save",				// Options - import classic save
 		"Confirm",							// Options - confirm
 		"Magic Sources",					// Menu button - magic sources
@@ -88,6 +89,7 @@ Button* init_buttons(const double fps, GameState* state) {
 		{screen_center_x()-200, 110, 200, 60},      // Options - autosave interval
 		{screen_center_x()-200, 1*90+110, 200, 60}, // Options - aspect ratio
 		{screen_center_x()-200, 2*90+110, 200, 60}, // Options - FPS
+		{screen_center_x()-200, 3*90+110, 200, 60}, // Options - post save behavior
 		{screen_center_x()-200, 3*90+110, 400, 60}, // Options - import classic save
 		{screen_center_x()-100, 470, 200, 60},      // Options - confirm
 		{screen_center_x()-390, 272, 150, 38},      // Menu button - magic sources
@@ -118,6 +120,7 @@ Button* init_buttons(const double fps, GameState* state) {
 		B_PURPLE,                           // Options - autosave interval
 		B_MENU,                             // Options - aspect ratio
 		B_PINK,                             // Options - FPS
+		B_LIGHTBLUE,                        // Options - post save behavior
 		B_LIGHTBLUE,                        // Options - import classic save
 		B_GREEN,                            // Options - confirm
 		B_MENU,                             // Menu button - magic sources
@@ -148,6 +151,7 @@ Button* init_buttons(const double fps, GameState* state) {
 		MENU_BUTTON_SND,                    // Options - autosave interval
 		MENU_BUTTON_SND,                    // Options - aspect ratio
 		MENU_BUTTON_SND,                    // Options - FPS
+		MENU_BUTTON_SND,                    // Options - post save behavior
 		MENU_BUTTON_SND,                    // Options - import classic save
 		MENU_BUTTON_SND,                    // Options - confirm
 		MENU_BUTTON_SND,                    // Menu button - magic sources
@@ -178,6 +182,7 @@ Button* init_buttons(const double fps, GameState* state) {
 		24,                                 // Options - autosave interval
 		24,                                 // Options - aspect ratio
 		24,                                 // Options - FPS
+		24,                                 // Options - post save behavior
 		24,                                 // Options - import classic save
 		24,                                 // Options - confirm
 		20,                                 // Menu button - magic sources
@@ -208,6 +213,7 @@ Button* init_buttons(const double fps, GameState* state) {
 		WHITE,                              // Options - autosave interval
 		BLACK,                              // Options - aspect ratio
 		WHITE,                              // Options - FPS
+		BLACK,                              // Options - post save behavior
 		BLACK,                              // Options - import classic save
 		WHITE,                              // Options - confirm
 		BLACK,                              // Menu button - magic sources
@@ -400,7 +406,7 @@ int set_window_icon(SDL_Window* window) {
 	return 0;
 }
 
-Config* init_magics_config(const E_AspectType aspect, const double fps, const int autosave_interval) {
+Config* init_magics_config(const E_AspectType aspect, const double fps, const int autosave_interval, const bool quitonsave) {
 	Config* config = (Config*)calloc(1, sizeof(Config));
 	if (!config) return NULL;
 
@@ -457,6 +463,8 @@ Config* init_magics_config(const E_AspectType aspect, const double fps, const in
 	//SDL_RenderSetScale(config->renderer, config->screen_scale, config->screen_scale);
 	config->save_version = SAVE_VERSION;
 	config->autosave_interval = autosave_interval;
+	
+	config->quitonsave = quitonsave;
 
 	if (init_config_modules(config) < 0) {
 		free(config);
@@ -482,9 +490,11 @@ void free_upgrades(Upgrade* upgrades) {
 }
 
 void free_config_modules(Config* config) {
+	//LOG_D("Free state...\n");
 	free_state(config->state);
 	
 	// free sounds
+	//LOG_D("Free sounds...\n");
 	for (int i = 0; i < NUM_SOUNDS; ++i) {
 		if (config->sounds[i]) {
 			Mix_FreeChunk(config->sounds[i]);
@@ -493,14 +503,17 @@ void free_config_modules(Config* config) {
 	free(config->sounds);
 	
 	// free buttons
+	//LOG_D("Free buttons...\n");
 	if (config->buttons) {
 		free(config->buttons);
 	}
 	
 	// free upgrades
+	//LOG_D("Free upgrades...\n");
 	free_upgrades(config->upgrades);
 	
 	// free save data
+	//LOG_D("Free save slot data...\n");
 	for (int i = 0; i < 4; ++i) {
 		if (config->saves[i].path) {
 			free(config->saves[i].path);
@@ -514,6 +527,7 @@ void free_config_modules(Config* config) {
 	}
 	
 	// free ending state
+	//LOG_D("Free ending state...\n");
 	SDL_DestroyTexture(config->ending_state->expl_tx1);
 	SDL_DestroyTexture(config->ending_state->expl_tx2);
 	if (config->ending_state) {
@@ -553,7 +567,7 @@ int init_config_modules(Config* config) {
 		free(config->buttons);
 		return -1;
 	}
-	
+	LOG_D("Save slot init\n");
 	config->saves = init_save_slots();
 	if (!config->saves) {
 		LOG_E("Unable to init save slots\n");
@@ -563,7 +577,7 @@ int init_config_modules(Config* config) {
 		free(config->sounds);
 		return -1;
 	}
-	
+	LOG_D("End state init\n");
 	config->ending_state = init_end_state(config->FPS, config->state, config->renderer);
 	if (!config->ending_state) {
 		LOG_E("Unable to init ending state\n");
@@ -574,7 +588,7 @@ int init_config_modules(Config* config) {
 		free(config->saves);
 		return -1;
 	}
-	LOG_D("Init save paths\n");
+	LOG_D("Save path init\n");
 	char save_path_buf[MAX_PATH_LEN] = "";
 	for (int i = 0; i < 4; ++i) {
 		snprintf(save_path_buf, MAX_PATH_LEN, "%s/magics_save_%d.json", get_save_path(), i);

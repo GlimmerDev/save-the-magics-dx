@@ -77,6 +77,7 @@ void draw_option_aspect(const Config* const config);
 void draw_option_fps(const Config* const config);
 void draw_option_autosave(const Config* const config);
 void draw_option_import(const Config* const config);
+void draw_option_post_save(const Config* const config);
 
 void draw_screen_options(Config* config);
 

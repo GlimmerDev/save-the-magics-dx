@@ -29,8 +29,12 @@ int android_load_asset_file(const char* filename);
 
 #define  LOG_E(...)  printf("ERROR: "); fprintf(stderr, __VA_ARGS__)
 #define  LOG_W(...)  printf("WARN: "); fprintf(stderr, __VA_ARGS__)
-#define  LOG_D(...)  printf("DEBUG: "); printf(__VA_ARGS__)
 #define  LOG_I(...)  printf("INFO: "); printf(__VA_ARGS__)
+#ifdef DEBUG
+#define  LOG_D(...)  printf("DEBUG: "); printf(__VA_ARGS__)
+#else
+#define LOG_D(...) ;
+#endif
 
 #endif
 

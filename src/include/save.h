@@ -49,7 +49,7 @@ void check_for_saves(Config* config);
 int calc_magic_missile(const long timestamp, const Config* const config);
 
 Config* load_config_from_file();
-int create_config_file(const unsigned int autosave_interval, const double fps, const E_AspectType aspect);
+int create_config_file(const unsigned int autosave_interval, const double fps, const bool quitonsave, const E_AspectType aspect);
 int create_default_config_file();
 bool config_file_exists();
 

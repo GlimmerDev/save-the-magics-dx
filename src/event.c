@@ -167,7 +167,8 @@ void check_done_buttons(Config* const config, unsigned int* const upgrade_page, 
 			bptr = get_button(OPT_CONFIRM_B);
 			if (done_button(bptr)) {
 				if (config->reload_state > RELOAD_STATE_NONE) {
-					create_config_file(config->autosave_interval, config->FPS, config->aspect);
+					create_config_file(config->autosave_interval, config->FPS, 
+										config->quitonsave, config->aspect);
 					if (config->reload_state == RELOAD_STATE_REQUESTED) {
 						++(config->reload_state);
 					} else {
@@ -201,10 +202,9 @@ void check_done_buttons(Config* const config, unsigned int* const upgrade_page, 
 				}
 				config->reload_state = RELOAD_STATE_REQUESTED;
 			}
-			// Import can be done without reload
-			bptr = get_button(OPT_IMPORT_B);
+			bptr = get_button(OPT_POSTSAVE_B);
 			if (done_button(bptr)) {
-
+				config->quitonsave = !(config->quitonsave);
 			}
 			break;
 		#endif
@@ -213,11 +213,16 @@ void check_done_buttons(Config* const config, unsigned int* const upgrade_page, 
 				bptr = get_button(SAVE_YES_B);
 				if (done_button(bptr)) {
 					save_game(config, *save_slot);
-					*running = false;
+					if (config->quitonsave) {
+						*running = false;
+					} else {
+						config->reload_state = RELOAD_STATE_EXECUTE_SOFT;
+					}	
 					return;
 				}
 				bptr = get_button(SAVE_NO_B);
 				if (done_button(bptr)) {
+					check_for_saves(config);
 					state->current_menu = MENU_SV_SLOT;
 				}
 				break;
@@ -225,11 +230,16 @@ void check_done_buttons(Config* const config, unsigned int* const upgrade_page, 
 			else if (state->current_menu >= MENU_SV_CNF_QUIT) {
 				bptr = get_button(SAVE_YES_B);
 				if (done_button(bptr)) {
+					check_for_saves(config);
 					state->current_menu = MENU_SV_SLOT;
 				}
 				bptr = get_button(SAVE_NO_B);
 				if (done_button(bptr)) {
-					*running = false;
+					if (config->quitonsave) {
+						*running = false;
+					} else {
+						config->reload_state = RELOAD_STATE_EXECUTE_SOFT;
+					}
 					return;
 				}
 				bptr = get_button(SAVE_CANCEL_B);
@@ -246,18 +256,21 @@ void check_done_buttons(Config* const config, unsigned int* const upgrade_page, 
 			for (int i = 0; i < 4; ++i) {
 				bptr = get_button(SAVE_0_B+i);
 				if (done_button(bptr)) {
+					// loading
 					if (state->current_menu == MENU_LD_SLOT) {
 						load_save(config, i);
 						state->current_screen = SCREEN_GAME_LOOP;
 						state->current_menu = MENU_UPGRADES;
-					} else if (config->saves[i].exists) {
+					} 
+					// saving
+					else if (config->saves[i].exists) {
 						*save_slot = i;
 						state->current_menu = MENU_SV_CNF_OVERWR;
 					} else {
 						save_game(config, i);
 						*running = false;
 						return;
-					}
+					} 
 				}
 			}
 			break;
@@ -480,6 +493,9 @@ void handle_click_save(const SDL_Point* const mouse_pos, Config* const config) {
 		for (int i = 0; i < 4; ++i) {
 			bptr = get_button(SAVE_0_B+i);
 			if ((state->current_menu == MENU_LD_SLOT) && (bptr->locked)) {
+				continue;
+			}
+			if ((state->current_menu == MENU_SV_SLOT) && !i) {
 				continue;
 			}
 			if (clicked_button(bptr, mouse_pos)) {

@@ -112,9 +112,11 @@ typedef struct Config {
 	unsigned int screen_center_y;
 	double screen_scale;
 	E_AspectType aspect;
+	
 	double FPS;
 	
 	unsigned int autosave_interval;
+	bool quitonsave;
 
 	E_ReloadState reload_state;
 	
@@ -144,7 +146,7 @@ void free_config_modules(Config* config);
 
 int init_config_modules(Config* config);
 
-Config* init_magics_config(const E_AspectType aspect, const double fps, const int autosave_interval);
+Config* init_magics_config(const E_AspectType aspect, const double fps, const int autosave_interval, const bool quitonsave);
 
 int set_upgrade_rects(Upgrade* upgrades, const int n, const int start_offset);
 

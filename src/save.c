@@ -471,9 +471,7 @@ void load_save(Config* config, const unsigned short slot) {
 	
 	int save_version = json_integer_value(json_object_get(save_data, "save_version"));
 	if (save_version < 200) {
-		#ifdef DEBUG
 		LOG_I("Classic save detected!\n");
-		#endif
 		load_save_json_upgrades(save_data, config, true);
 	}
 	else if (save_version != config->save_version) {
@@ -529,14 +527,15 @@ Config* load_config_from_file() {
 	const unsigned int autosave_interval = json_integer_value(json_object_get(j_config, "autosave_interval"));
 	const double fps = json_real_value(json_object_get(j_config, "fps"));
 	const E_AspectType aspect = json_integer_value(json_object_get(j_config, "aspect"));
-	Config* config = init_magics_config(aspect, fps, autosave_interval);
+	const bool quitonsave = json_integer_value(json_object_get(j_config, "quitonsave"));
+	Config* config = init_magics_config(aspect, fps, autosave_interval, quitonsave);
 	if (!config) {
 		LOG_E("Error creating config in load_config_from_file\n");
 	}
 	return config;
 }
 
-int create_config_file(const unsigned int autosave_interval, const double fps, const E_AspectType aspect) {
+int create_config_file(const unsigned int autosave_interval, const double fps, const bool quitonsave, const E_AspectType aspect) {
 	json_t* j_config = json_object();
 	if (!j_config) {
 		LOG_E("Error creating j_config object for config file\n");
@@ -544,6 +543,7 @@ int create_config_file(const unsigned int autosave_interval, const double fps, c
 	}
 	json_object_set(j_config, "autosave_interval", json_integer(autosave_interval));
 	json_object_set(j_config, "aspect", json_integer(aspect));
+	json_object_set(j_config, "quitonsave", json_integer(quitonsave));
 	json_object_set(j_config, "fps", json_real(fps));
 
 	char* config_path = get_config_file_path();
@@ -562,7 +562,7 @@ int create_config_file(const unsigned int autosave_interval, const double fps, c
 }
 
 int create_default_config_file() {
-	return create_config_file(DEFAULT_AUTOSAVE, DEFAULT_FPS, DEFAULT_ASPECT);
+	return create_config_file(DEFAULT_AUTOSAVE, DEFAULT_FPS, DEFAULT_POSTSAVE, DEFAULT_ASPECT);
 }
 
 bool config_file_exists() {

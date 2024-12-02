@@ -218,7 +218,6 @@ int init_fonts(SDL_Renderer* renderer) {
 				free(fonts);
 				return -1;
 			}
-			LOG_D("Initializing font[%d]\n", offset);
 			if (!FC_LoadFont(fonts[offset], renderer, path_buf, j*2+MIN_FONT_SIZE, COL[WHITE], TTF_STYLE_NORMAL)) {
 				LOG_E("Failed to load font[%d] from %s\n", offset, path_buf);
 				return -1; // Add cleanup code here if necessary
@@ -231,10 +230,8 @@ int init_fonts(SDL_Renderer* renderer) {
 
 void magics_font_cleanup() {
 	for (int i = 0; i < NUM_PER_FONT * NUM_FONTS; ++i) {
-		LOG_D("Freeing font[%d]: %p\n", i, FONTS[i]);
 		FC_FreeFont(FONTS[i]);
 	}
-	LOG_D("Freeing fonts pointer...\n");
 	free(FONTS);
 }
 
@@ -826,12 +823,21 @@ void draw_option_import(const Config* const config) {
 	return;
 }
 
+void draw_option_post_save(const Config* const config) {
+	const char* post_save_strs[2] = {
+		"No",
+		"Yes (Classic)"
+	};
+	Button* bptr = get_button(OPT_POSTSAVE_B);
+	draw_text(post_save_strs[config->quitonsave], bptr->centerx+200, bptr->centery-15, FONT_RPG, 30, WHITE, config->renderer);
+}
+
 void draw_screen_options(Config* config) {
 	void (*draw_opt_funcs[4])(const Config* const) = {
 		draw_option_autosave,
 		draw_option_aspect,
 		draw_option_fps,
-		draw_option_import,
+		draw_option_post_save
 	};
 	
 #ifndef __MAGICSMOBILE__
