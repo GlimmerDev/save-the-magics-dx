@@ -837,7 +837,7 @@ void draw_compendium_entry(Config* config, const CompendiumEntry* const entry) {
 		"Bio"
 	};
 
-	int x = 40;
+	int x = screen_center_x()-360;
 	int y = 80;
 	int sp = 50;
 
@@ -857,6 +857,9 @@ void draw_compendium_entry(Config* config, const CompendiumEntry* const entry) {
 	draw_text_left(entry->age, 		x+10, y+20+2*sp, FONT_RPG, 24, WHITE, config->renderer);
 	draw_text_left(entry->pronouns, x+10, y+20+3*sp, FONT_RPG, 24, WHITE, config->renderer);
 	draw_text_multi(entry->bio, 	x+10, y+20+4*sp, FONT_RPG, 20, WHITE, config->renderer, 480);
+
+	// art
+	draw_text_multi("Art coming soon!!", x+590, 200, FONT_RPG, 30, WHITE, config->renderer, 100);
 }
 
 void draw_screen_compendium(Config* config, unsigned int* page) {
