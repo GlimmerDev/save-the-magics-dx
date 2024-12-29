@@ -25,6 +25,14 @@ typedef struct Star {
 	E_ColorIndex color;
 } Star;
 
+typedef struct CompendiumEntry {
+	const char* name;
+	const char* title;
+	const char* age;
+	const char* pronouns;
+	const char* bio;
+} CompendiumEntry;
+
 typedef struct Button {
 	const char* name;
 	E_ColorIndex color;
@@ -102,6 +110,7 @@ typedef struct Config {
 	Button* buttons;
 	Mix_Chunk** sounds;
 	EndState* ending_state;
+	CompendiumEntry* compendium;
 	
 	unsigned int save_version;
 	SaveSlot* saves;
@@ -125,6 +134,7 @@ typedef struct Config {
 } Config;
 
 
+CompendiumEntry* init_compendium();
 
 Button* init_buttons(const double fps, GameState* state);
 

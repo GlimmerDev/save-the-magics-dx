@@ -10,11 +10,13 @@
 #include "include/object.h"
 #include "include/save.h"
 #include "include/upgrade_data.h"
+#include "include/compendium_data.h"
 #ifndef __ANDROID__
 #include "include/logo_data.h"
 #endif
 
 extern const char* UPGRADE_DATA[];
+extern const char* COMPENDIUM_DATA[];
 
 const int AUTOSAVE_INTERVALS[] = { 0, 1, 2, 5, 10, 30 };
 
@@ -32,6 +34,22 @@ const char* SOUND_FILENAMES[NUM_SOUNDS] = {
     "evil_ship.ogg"             // EVIL_SHIP_SND
 };
 
+CompendiumEntry* init_compendium() {
+	int data_index = 0;
+	CompendiumEntry* compendium = (CompendiumEntry*)calloc(NUM_COMPENDIUM_ENTRIES, sizeof(CompendiumEntry));
+	for (int i = 0; i < NUM_COMPENDIUM_ENTRIES; ++i) {
+		data_index = i*NUM_COMPENDIUM_FIELDS;
+		// NAME;TITLE;AGE;PRONOUNS;BIO
+		// 0   ;  1;   2;  3;      4
+		compendium[i].name = COMPENDIUM_DATA[data_index];
+		compendium[i].title = COMPENDIUM_DATA[data_index+1];
+		compendium[i].age = COMPENDIUM_DATA[data_index+2];
+		compendium[i].pronouns = COMPENDIUM_DATA[data_index+3];
+		compendium[i].bio = COMPENDIUM_DATA[data_index+4];
+	}
+	return compendium;
+}
+
 Button* init_buttons(const double fps, GameState* state) {
 	Button* buttons = (Button*)malloc(sizeof(Button)*(NUM_MISC_BUTTONS+NUM_MENU_BUTTONS));
 	if (!buttons) return NULL;
@@ -45,6 +63,10 @@ Button* init_buttons(const double fps, GameState* state) {
 		"New Game",        					// New game 
 		"Load Game",       					// Load game
 		"Options",							// Main menu - options
+		"Compendium",						// Compendium
+		"Prev",								// Compendium - Left
+		"Next",								// Compendium - Right
+		"Exit",								// Compendium - Exit
 		"Yes",             					// Save yes
 		"No",              					// Save no
 		"Cancel",          					// Save cancel
@@ -73,9 +95,13 @@ Button* init_buttons(const double fps, GameState* state) {
 		{screen_center_x()-390, 319, 779, 228},     // Face evil
 		{screen_center_x()-390, 319, 779, 228},     // Meditate (menu)
 		{screen_center_x()-50, 150, 100, 100},      // Meditate (clicker)
-        {screen_center_x()-100, 310, 200, 60},      // New game 
-		{screen_center_x()-100, 390, 200, 60},      // Load game
-		{screen_center_x()-100, 470, 200, 60},      // Main menu - options
+        {screen_center_x()-100, 290, 200, 60},      // New game
+		{screen_center_x()-100, 290+76*1, 200, 60}, // Load game
+		{screen_center_x()-100, 290+76*2, 200, 60}, // Main menu - options
+		{screen_center_x()-100, 290+76*3, 200, 60}, // Compendium
+		{screen_center_x()-250, 470, 100, 60},		// Compendium - Left
+		{screen_center_x()+150, 470, 100, 60},		// Compendium - Right
+		{screen_center_x()-100, 470, 200, 60},		// Compendium - Exit
 		{screen_center_x()-100, 260, 200, 60},      // Save yes
         {screen_center_x()-100, 340, 200, 60},      // Save no
 		{screen_center_x()-100, 420, 200, 60},      // Save cancel
@@ -107,6 +133,10 @@ Button* init_buttons(const double fps, GameState* state) {
 		B_PURPLE,                           // New game 
 		B_BLUE,                             // Load game
 		B_MENU,								// Options
+		B_MENU,								// Compendium
+		B_MENU,								// Compendium - Left
+		B_MENU,                             // Compendium - Right
+		B_MENU,                             // Compendium - Exit
         B_GREEN,                            // Save yes
 		B_RED,                              // Save no
 		B_MENU,                             // Save cancel
@@ -138,6 +168,10 @@ Button* init_buttons(const double fps, GameState* state) {
 		MENU_BUTTON_SND,                    // New game 
 		MENU_BUTTON_SND,                    // Load game
 		MENU_BUTTON_SND,					// Options
+		MENU_BUTTON_SND,					// Compendium
+		MENU_BUTTON_SND,					// Compendium - Left
+		MENU_BUTTON_SND,					// Compendium - Right
+		MENU_BUTTON_SND,					// Compendium - Exit
 		MENU_BUTTON_SND,                    // Save yes
 		MENU_BUTTON_SND,                    // Save no
 		MENU_BUTTON_SND,                    // Save cancel
@@ -169,6 +203,10 @@ Button* init_buttons(const double fps, GameState* state) {
 		30,                                 // New game 
 		30,                                 // Load game
 		30,									// Options
+		30,									// Compendium
+		30,									// Compendium - Left
+		30,									// Compendium - Right
+		30,									// Compendium - Exit
 		30,                                 // Save yes
 		30,                                 // Save no
 		30,                                 // Save cancel
@@ -200,6 +238,10 @@ Button* init_buttons(const double fps, GameState* state) {
 		WHITE,                              // New game 
 		WHITE,                              // Load game
 		BLACK,								// Options
+		BLACK,								// Compendium
+		BLACK,								// Compendium - Left
+		BLACK,								// Compendium - Right
+		BLACK,								// Compendium - Exit
 		WHITE,                              // Save yes
 		WHITE,                              // Save no
 		WHITE,                              // Save cancel
@@ -248,6 +290,7 @@ Button* init_buttons(const double fps, GameState* state) {
 	// buttons that require special parameters
 	buttons[MEDI_B].click_length = fps;
 	buttons[START_MEDI_B].locked = true;
+	buttons[COMPENDIUM_B].locked = false;
 	
 	for (int i = 0; i < 4; ++i) {
 		buttons[SAVE_0_B+i].hide_locked_text = true;
@@ -533,6 +576,11 @@ void free_config_modules(Config* config) {
 	if (config->ending_state) {
 		free(config->ending_state);
 	}
+
+	// free compendium
+	if (config->compendium) {
+		free(config->compendium);
+	}
 }
 
 int init_config_modules(Config* config) {
@@ -588,6 +636,20 @@ int init_config_modules(Config* config) {
 		free(config->saves);
 		return -1;
 	}
+
+	LOG_D("Compendium init\n");
+	config->compendium = init_compendium();
+	if (!config->compendium) {
+		LOG_E("Unable to init compendium\n");
+		free(config->state);
+		free(config->upgrades);
+		free(config->buttons);
+		free(config->sounds);
+		free(config->saves);
+		free(config->ending_state);
+		return -1;
+	}
+
 	LOG_D("Save path init\n");
 	char save_path_buf[MAX_PATH_LEN] = "";
 	for (int i = 0; i < 4; ++i) {
@@ -601,9 +663,11 @@ int init_config_modules(Config* config) {
 			free(config->sounds);
 			free(config->saves);
 			free(config->ending_state);
+			free(config->compendium);
 			return -1;
 		}
 	}
+
 	return 0;
 }
 

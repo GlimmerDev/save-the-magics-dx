@@ -321,6 +321,8 @@ int SDL_main(int argc, char *argv[]) {
 				case SCREEN_ENDING:
 					draw_screen_ending(config->renderer, config);
 					break;
+				case SCREEN_COMPENDIUM:
+					draw_screen_compendium(config, &upgrade_page);
 			}
 			
 			// ****************

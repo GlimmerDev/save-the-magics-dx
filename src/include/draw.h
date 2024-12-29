@@ -56,8 +56,17 @@ int draw_upgrade(const Upgrade* upgrade, const int slot, SDL_Renderer* renderer,
 
 int set_draw_color(SDL_Renderer* renderer, const E_ColorIndex color);
 
-void draw_text(const char* text, const int x, const int y, const int font, 
-				const int size, const E_ColorIndex color, SDL_Renderer* renderer);
+void _draw_text(const char* text, const int x, const int y, const int font,
+				const int size, const E_ColorIndex color, SDL_Renderer* renderer, const FC_AlignEnum align);
+
+void draw_text_left(const char* text, const int x, const int y, const int font,
+									const int size, const E_ColorIndex color, SDL_Renderer* renderer);
+
+void draw_text(const char* text, const int x, const int y, const int font,
+												   const int size, const E_ColorIndex color, SDL_Renderer* renderer);
+
+void draw_text_multi(const char* text, const int x, const int y, const int font_i,
+					 const int size, const E_ColorIndex color, SDL_Renderer* renderer, int wrap_width);
 
 void draw_magics_info(SDL_Renderer* renderer, Button* buttons, GameState* state);
 
@@ -72,6 +81,9 @@ void draw_menu_face_evil(SDL_Renderer* renderer, Config* config);
 void draw_screen_ending(SDL_Renderer* renderer, Config* config);
 
 void draw_screen_title(Config* config);
+
+void draw_compendium_entry(Config* config, const CompendiumEntry* const entry);
+void draw_screen_compendium(Config* config, unsigned int* page);
 
 void draw_option_aspect(const Config* const config);
 void draw_option_fps(const Config* const config);

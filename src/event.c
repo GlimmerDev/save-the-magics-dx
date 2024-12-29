@@ -162,6 +162,11 @@ void check_done_buttons(Config* const config, unsigned int* const upgrade_page, 
 			if (done_button(bptr)) {
 				state->current_screen = SCREEN_OPTIONS;
 			}
+			bptr = get_button(COMPENDIUM_B);
+			if (done_button(bptr)) {
+				*upgrade_page = 0;
+				state->current_screen = SCREEN_COMPENDIUM;
+			}
 			break;
 		case SCREEN_OPTIONS:
 			bptr = get_button(OPT_CONFIRM_B);
@@ -321,6 +326,19 @@ void check_done_buttons(Config* const config, unsigned int* const upgrade_page, 
 					state->current_screen = SCREEN_SAVE;
 					state->current_menu = MENU_SV_ENDING;
 				}
+			}
+			break;
+		case SCREEN_COMPENDIUM:
+			bptr = get_button(COMP_LEFT_B);
+			if (done_button(bptr)) {
+				--(*upgrade_page);
+				if (*upgrade_page >= NUM_COMPENDIUM_ENTRIES) {
+					*upgrade_page = NUM_COMPENDIUM_ENTRIES-1;
+				}
+			}
+			bptr = get_button(COMP_RIGHT_B);
+			if (done_button(bptr)) {
+				*upgrade_page = (*upgrade_page+1) % NUM_COMPENDIUM_ENTRIES;
 			}
 	}
 
@@ -581,6 +599,26 @@ void handle_click_title(const SDL_Point* mouse_pos, Config* const config) {
 	if (clicked_button(bptr, mouse_pos)) {
 		trigger_button(bptr, config->sounds, config->state);
 	}
+	bptr = get_button(COMPENDIUM_B);
+	if (clicked_button(bptr, mouse_pos)) {
+		trigger_button(bptr, config->sounds, config->state);
+	}
+}
+
+void handle_click_compendium(const SDL_Point* mouse_pos, Config* const config) {
+	Button* bptr = NULL;
+	bptr = get_button(COMP_LEFT_B);
+	if (clicked_button(bptr, mouse_pos)) {
+		trigger_button(bptr, config->sounds, config->state);
+	}
+	bptr = get_button(COMP_RIGHT_B);
+	if (clicked_button(bptr, mouse_pos)) {
+		trigger_button(bptr, config->sounds, config->state);
+	}
+	bptr = get_button(COMP_EXIT_B);
+	if (clicked_button(bptr, mouse_pos)) {
+		trigger_button(bptr, config->sounds, config->state);
+	}
 }
 
 void handle_click_ending(const SDL_Point* mouse_pos, Config* const config) {
@@ -662,6 +700,9 @@ void handle_event_sdl(const SDL_Event event, SDL_Point* const mouse_pos, Config*
 					break;
 				case SCREEN_ENDING:
 					handle_click_ending(mouse_pos, config);
+					break;
+				case SCREEN_COMPENDIUM:
+					handle_click_compendium(mouse_pos, config);
 					break;
 			}
 			break;

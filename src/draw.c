@@ -71,7 +71,7 @@ SDL_Color COL[]  = {
 	(SDL_Color){0, 0, 0, SDL_ALPHA_TRANSPARENT} // TRANSPARENT
 };
 
-Shape BG_SHAPES[13];
+Shape BG_SHAPES[NUM_BG_SHAPES];
 
 Star BG_STARS[NUM_STARS];
 
@@ -306,6 +306,8 @@ void init_bg_shapes() {
 	BG_SHAPES[10] = (Shape){SHAPE_TYPE_HILL, PLANET2, 0, 0, screen_ratio()*113, 0, NULL}; 						                // BG_MEDI_HILL2
 	BG_SHAPES[11] = (Shape){SHAPE_TYPE_HILL, PLANET1, 0, 0, screen_ratio()*75, 0, NULL}; 							            // BG_MEDI_HILL3
 	BG_SHAPES[12] = (Shape){SHAPE_TYPE_RECT, TRANS_WHITE, screen_center_x()-393, 316, 784, 233, NULL}; 			            	// BG_MENU_RECT
+	BG_SHAPES[13] = (Shape){SHAPE_TYPE_RECT, TRANS_WHITE, screen_center_x()-380, 70, 520, 380, NULL};							// BG_COMP_BIO
+	BG_SHAPES[14] = (Shape){SHAPE_TYPE_RECT, TRANS_WHITE, screen_center_x()+160, 70, 220, 380, NULL};							// BG_COMP_ART
 }
 
 void init_end_ship_shapes() {
@@ -554,15 +556,48 @@ int set_draw_color(SDL_Renderer* renderer, const E_ColorIndex color) {
 	return 0;
 }
 
-void draw_text(const char* text, const int x, const int y, const int font, 
-				const int size, const E_ColorIndex color, SDL_Renderer* renderer) {
+void _draw_text(const char* text, const int x, const int y, const int font,
+				const int size, const E_ColorIndex color, SDL_Renderer* renderer, const FC_AlignEnum align) {
 	static FC_Effect e;
-    e.alignment = FC_ALIGN_CENTER;
+    e.alignment = align;
     e.scale = FC_MakeScale(1.0f,1.0f);
     e.color = COL[color];
 	
 	const int offset = (font*NUM_PER_FONT) + (size-MIN_FONT_SIZE)/2;
 	FC_DrawEffect(FONTS[offset], renderer, x, y, e, text);
+}
+
+void draw_text_left(const char* text, const int x, const int y, const int font,
+					const int size, const E_ColorIndex color, SDL_Renderer* renderer) {
+	_draw_text(text, x, y, font, size, color, renderer, FC_ALIGN_LEFT);
+}
+
+void draw_text(const char* text, const int x, const int y, const int font,
+			   const int size, const E_ColorIndex color, SDL_Renderer* renderer) {
+	_draw_text(text, x, y, font, size, color, renderer, FC_ALIGN_CENTER);
+}
+
+void draw_text_multi(const char* text, const int x, const int y, const int font_i,
+					 const int size, const E_ColorIndex color, SDL_Renderer* renderer, int wrap_width) {
+	const int max_result_size = 1024; // Adjust as needed
+	char wrapped_text[max_result_size];
+
+	const int f_offset = (font_i*NUM_PER_FONT) + (size-MIN_FONT_SIZE)/2;
+	FC_Font* font = FONTS[f_offset];
+
+	// Get the wrapped text
+	FC_GetWrappedText(font, wrapped_text, max_result_size, wrap_width, "%s", text);
+
+	// Render each line of wrapped text
+	int line_spacing = size;
+	char *line = strtok(wrapped_text, "\n");
+	int current_y = y;
+
+	while (line) {
+		FC_Draw(font, renderer, x, current_y, line);
+		current_y += line_spacing;
+		line = strtok(NULL, "\n");
+	}
 }
 
 void draw_magics_info(SDL_Renderer* renderer, Button* buttons, GameState* state) {
@@ -790,6 +825,49 @@ void draw_screen_title(Config* config) {
 	draw_button(NEW_GAME_B);
 	draw_button(LOAD_GAME_B);
 	draw_button(OPTIONS_B);
+	draw_button(COMPENDIUM_B);
+}
+
+void draw_compendium_entry(Config* config, const CompendiumEntry* const entry) {
+	const char* headers[NUM_COMPENDIUM_FIELDS] = {
+		"Name",
+		"Title",
+		"Age",
+		"Pronouns",
+		"Bio"
+	};
+
+	int x = 40;
+	int y = 80;
+	int sp = 50;
+
+	// background boxes
+	SDL_SetRenderDrawBlendMode(config->renderer, SDL_BLENDMODE_BLEND);
+	draw_shape(config->renderer, &BG_SHAPES[BG_COMP_BIO]);
+	draw_shape(config->renderer, &BG_SHAPES[BG_COMP_ART]);
+	SDL_SetRenderDrawBlendMode(config->renderer, SDL_BLENDMODE_NONE);
+
+	for (int i = 0; i < NUM_COMPENDIUM_FIELDS; ++i) {
+		draw_text_left(headers[i], x, y+i*sp, FONT_RPG, 18, WHITE, config->renderer);
+	}
+
+	// values
+	draw_text_left(entry->name, 	x+10, y+20+0*sp, FONT_RPG, 24, WHITE, config->renderer);
+	draw_text_left(entry->title, 	x+10, y+20+1*sp, FONT_RPG, 24, WHITE, config->renderer);
+	draw_text_left(entry->age, 		x+10, y+20+2*sp, FONT_RPG, 24, WHITE, config->renderer);
+	draw_text_left(entry->pronouns, x+10, y+20+3*sp, FONT_RPG, 24, WHITE, config->renderer);
+	draw_text_multi(entry->bio, 	x+10, y+20+4*sp, FONT_RPG, 20, WHITE, config->renderer, 480);
+}
+
+void draw_screen_compendium(Config* config, unsigned int* page) {
+	draw_text("Compendium", screen_center_x(), 8, FONT_RPG, 30, WHITE, config->renderer);
+	draw_text("Reveal hidden knowledge about the mighty princesses of Cylestrya.", screen_center_x(), 36, FONT_RPG, 18, WHITE, config->renderer);
+	draw_button(COMP_LEFT_B);
+	draw_button(COMP_RIGHT_B);
+	draw_button(COMP_EXIT_B);
+
+	// draw compendium entry
+	draw_compendium_entry(config, &(config->compendium[*page]));
 }
 
 void draw_option_aspect(const Config* const config) {

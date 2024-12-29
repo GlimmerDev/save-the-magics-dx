@@ -28,9 +28,10 @@ else ifeq ($(shell uname),Darwin)
 
 # Linux
 else
-	INCLUDE_PATHS = -I/usr/local/include -I/usr/local/include/SDL2
+	INCLUDE_PATHS = -I/usr/include -I/usr/include/SDL2 -I/usr/local/include
+	LIBRARY_PATHS = -L/usr/lib -L/usr/local/lib
 	COMPILER_FLAGS = 
-	LINKER_FLAGS = -lSDL2main -lSDL2 -lSDL2_mixer -lSDL2_ttf -lFontCache -ljansson -lm
+	LINKER_FLAGS = -D_REENTRANT -lSDL2main -lSDL2 -lSDL2_mixer -lSDL2_ttf -lfontcache -ljansson -lm
 endif
 
 # Only builds PC version
