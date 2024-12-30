@@ -149,14 +149,17 @@ void check_done_buttons(Config* const config, unsigned int* const upgrade_page, 
 	switch (state->current_screen) { 
 		case SCREEN_TITLE:
 			bptr = get_button(NEW_GAME_B);
-			if  (done_button(bptr)) {
+			if (done_button(bptr)) {
 				state->current_screen = SCREEN_GAME_LOOP;
+				*upgrade_page = 0;
+				*princess_page = 0;
 			} 
 			bptr = get_button(LOAD_GAME_B);
 			if (done_button(bptr)) {
-				state->current_screen = SCREEN_SAVE;
-				state->current_menu = MENU_LD_SLOT;
-				check_for_saves(config);
+				if (any_save_exists(config)) {
+					state->current_screen = SCREEN_SAVE;
+					state->current_menu = MENU_LD_SLOT;
+				}
 			} 
 			bptr = get_button(OPTIONS_B);
 			if (done_button(bptr)) {
@@ -181,6 +184,7 @@ void check_done_buttons(Config* const config, unsigned int* const upgrade_page, 
 					}
 				}
 				config->state->current_screen = SCREEN_TITLE;
+				check_unlock_compendium(config);
 			}
 			// Autosave can be changed without reload
 			bptr = get_button(OPT_AUTOSAVE_B);
@@ -227,7 +231,7 @@ void check_done_buttons(Config* const config, unsigned int* const upgrade_page, 
 				}
 				bptr = get_button(SAVE_NO_B);
 				if (done_button(bptr)) {
-					check_for_saves(config);
+					load_all_save_properties(config);
 					state->current_menu = MENU_SV_SLOT;
 				}
 				break;
@@ -235,7 +239,7 @@ void check_done_buttons(Config* const config, unsigned int* const upgrade_page, 
 			else if (state->current_menu >= MENU_SV_CNF_QUIT) {
 				bptr = get_button(SAVE_YES_B);
 				if (done_button(bptr)) {
-					check_for_saves(config);
+					load_all_save_properties(config);
 					state->current_menu = MENU_SV_SLOT;
 				}
 				bptr = get_button(SAVE_NO_B);
@@ -339,6 +343,10 @@ void check_done_buttons(Config* const config, unsigned int* const upgrade_page, 
 			bptr = get_button(COMP_RIGHT_B);
 			if (done_button(bptr)) {
 				*upgrade_page = (*upgrade_page+1) % NUM_COMPENDIUM_ENTRIES;
+			}
+			bptr = get_button(COMP_EXIT_B);
+			if (done_button(bptr)){
+				state->current_screen = SCREEN_TITLE;
 			}
 	}
 
@@ -600,6 +608,9 @@ void handle_click_title(const SDL_Point* mouse_pos, Config* const config) {
 		trigger_button(bptr, config->sounds, config->state);
 	}
 	bptr = get_button(COMPENDIUM_B);
+	if (bptr->locked) {
+		return;
+	}
 	if (clicked_button(bptr, mouse_pos)) {
 		trigger_button(bptr, config->sounds, config->state);
 	}

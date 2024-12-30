@@ -177,6 +177,7 @@ int SDL_main(int argc, char *argv[]) {
 	atexit(magics_cleanup);
 
 	create_save_path();
+	check_unlock_compendium(config);
 	
 	LOG_D("Initializing fonts...\n");
 	init_fonts(config->renderer);
@@ -214,6 +215,7 @@ int SDL_main(int argc, char *argv[]) {
 			LOG_I("***Hard reloading***\n");
 			config = magics_hard_reload(config->aspect, get_fps(), config->autosave_interval, 
 										config->quitonsave, &TIME_STEP, &MAX_ACCUMULATOR);
+			check_unlock_compendium(config);
 			LOG_I("***Hard reload complete!***\n");
 		}
 

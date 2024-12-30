@@ -501,10 +501,28 @@ void load_save(Config* config, const unsigned short slot) {
 	json_decref(save_data);
 }
 
-void check_for_saves(Config* config) {
+void load_all_save_properties(Config* config) {
 	for (int i = 0; i < 4; ++i) {
 		load_save_properties(config, i);
 	}
+}
+
+void check_unlock_compendium(Config* config) {
+	load_all_save_properties(config);
+	bool unlocked = false;
+	for (int i = 0; i < 4; ++i) {
+		unlocked |= config->saves[i].win_count;
+	}
+	config->buttons[COMPENDIUM_B].locked = !unlocked;
+}
+
+bool any_save_exists(Config* config) {
+	load_all_save_properties(config);
+	bool any_saves = false;
+	for (int i = 0; i < 4; ++i) {
+		any_saves |= config->saves[i].exists;
+	}
+	return any_saves;
 }
 
 int calc_magic_missile(const long timestamp, const Config* const config) {

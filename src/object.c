@@ -46,6 +46,8 @@ CompendiumEntry* init_compendium() {
 		compendium[i].age = COMPENDIUM_DATA[data_index+2];
 		compendium[i].pronouns = COMPENDIUM_DATA[data_index+3];
 		compendium[i].bio = COMPENDIUM_DATA[data_index+4];
+		// compendium[i].color =
+		// compendium[i].text_color =
 	}
 	return compendium;
 }
@@ -96,12 +98,12 @@ Button* init_buttons(const double fps, GameState* state) {
 		{screen_center_x()-390, 319, 779, 228},     // Meditate (menu)
 		{screen_center_x()-50, 150, 100, 100},      // Meditate (clicker)
         {screen_center_x()-100, 290, 200, 60},      // New game
-		{screen_center_x()-100, 290+76*1, 200, 60}, // Load game
-		{screen_center_x()-100, 290+76*2, 200, 60}, // Main menu - options
-		{screen_center_x()-100, 290+76*3, 200, 60}, // Compendium
-		{screen_center_x()-250, 470, 100, 60},		// Compendium - Left
-		{screen_center_x()+150, 470, 100, 60},		// Compendium - Right
-		{screen_center_x()-100, 470, 200, 60},		// Compendium - Exit
+		{screen_center_x()-100, 290+70*1, 200, 60}, // Load game
+		{screen_center_x()-100, 290+70*2, 200, 60}, // Main menu - options
+		{screen_center_x()-100, 290+70*3, 200, 60}, // Compendium
+		{screen_center_x()-250, 290+70*3, 100, 60},	// Compendium - Left
+		{screen_center_x()+150, 290+70*3, 100, 60},	// Compendium - Right
+		{screen_center_x()-100, 290+70*3, 200, 60},	// Compendium - Exit
 		{screen_center_x()-100, 260, 200, 60},      // Save yes
         {screen_center_x()-100, 340, 200, 60},      // Save no
 		{screen_center_x()-100, 420, 200, 60},      // Save cancel
@@ -133,9 +135,9 @@ Button* init_buttons(const double fps, GameState* state) {
 		B_PURPLE,                           // New game 
 		B_BLUE,                             // Load game
 		B_MENU,								// Options
-		B_MENU,								// Compendium
-		B_MENU,								// Compendium - Left
-		B_MENU,                             // Compendium - Right
+		B_DARK,								// Compendium
+		B_GREEN,							// Compendium - Left
+		B_GREEN,                            // Compendium - Right
 		B_MENU,                             // Compendium - Exit
         B_GREEN,                            // Save yes
 		B_RED,                              // Save no
@@ -238,13 +240,13 @@ Button* init_buttons(const double fps, GameState* state) {
 		WHITE,                              // New game 
 		WHITE,                              // Load game
 		BLACK,								// Options
-		BLACK,								// Compendium
+		WHITE,								// Compendium
 		BLACK,								// Compendium - Left
 		BLACK,								// Compendium - Right
 		BLACK,								// Compendium - Exit
 		WHITE,                              // Save yes
 		WHITE,                              // Save no
-		WHITE,                              // Save cancel
+		BLACK,                              // Save cancel
 		WHITE,                              // Quit
 		BLACK,                              // Mute
 		BLACK,                              // Ending OK
@@ -257,7 +259,7 @@ Button* init_buttons(const double fps, GameState* state) {
 		WHITE,                              // Options - FPS
 		BLACK,                              // Options - post save behavior
 		BLACK,                              // Options - import classic save
-		WHITE,                              // Options - confirm
+		BLACK,                              // Options - confirm
 		BLACK,                              // Menu button - magic sources
 		BLACK,                              // Menu button - princesses
 		BLACK,                              // Menu button - meditate

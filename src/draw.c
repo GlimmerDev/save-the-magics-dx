@@ -863,8 +863,8 @@ void draw_compendium_entry(Config* config, const CompendiumEntry* const entry) {
 }
 
 void draw_screen_compendium(Config* config, unsigned int* page) {
-	draw_text("Compendium", screen_center_x(), 8, FONT_RPG, 30, WHITE, config->renderer);
-	draw_text("Reveal hidden knowledge about the mighty princesses of Cylestrya.", screen_center_x(), 36, FONT_RPG, 18, WHITE, config->renderer);
+	draw_text("Compendium", screen_center_x(), 14, FONT_RPG, 30, WHITE, config->renderer);
+	draw_text("Reveal hidden knowledge about the mighty princesses of Cylestrya.", screen_center_x(), 44, FONT_RPG, 18, WHITE, config->renderer);
 	draw_button(COMP_LEFT_B);
 	draw_button(COMP_RIGHT_B);
 	draw_button(COMP_EXIT_B);

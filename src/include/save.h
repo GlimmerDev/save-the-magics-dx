@@ -44,7 +44,9 @@ char* create_save_path();
 void load_save_properties(Config* config, const unsigned short slot);
 void load_save(Config* config, const unsigned short slot);
 
-void check_for_saves(Config* config);
+void load_all_save_properties(Config* config);
+void check_unlock_compendium(Config* config);
+bool any_save_exists(Config* config);
 
 int calc_magic_missile(const long timestamp, const Config* const config);
 

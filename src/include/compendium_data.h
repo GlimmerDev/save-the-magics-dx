@@ -18,9 +18,9 @@ const char* COMPENDIUM_DATA[] = {
 	// Desert
 	"Zahara",			"Desert Princess",	"44",		"",					"",
 	// Genderfluid
-	"Veylen",			"Genderfluid Prince","32",		"Any",				"",
+	"Veylen",			"Genderfluid Prince","32",		"Any",				"A master of shapeshifting and changing identity, Veylen is rarely seen with the same appearance twice. They distill a vast reserve of gender fluid, a potent liquid that aids in exploring gender identity and expression. Though she does not love the label of prince or princess, he proudly considers himself to be the first Magics Prince of Clyestrya.",
 	// Mystic
-	"Caroline",			"Mystic Princess",	"27",		"She/Her",			"",
+	"Carolyne",			"Mystic Princess",	"27",		"She/Her",			"",
 	// Love
 	"Amara",			"Love Princess",	"51",		"Fae/Faer",			"Unlike other princesses, Amara must hibernate periodically in order to recharge her power. Anyone is welcome to come snuggle with her during this process. At faer fullest potential, the love Amara holds within faer heart can provide every creature on Cylestrya with enough comfort and safety to achieve true happiness.",
 	// Unity
