@@ -57,7 +57,8 @@ int draw_upgrade(const Upgrade* upgrade, const int slot, SDL_Renderer* renderer,
 int set_draw_color(SDL_Renderer* renderer, const E_ColorIndex color);
 
 void _draw_text(const char* text, const int x, const int y, const int font,
-				const int size, const E_ColorIndex color, SDL_Renderer* renderer, const FC_AlignEnum align);
+				const int size, const E_ColorIndex color, SDL_Renderer* renderer,
+				const FC_AlignEnum align);
 
 void draw_text_left(const char* text, const int x, const int y, const int font,
 									const int size, const E_ColorIndex color, SDL_Renderer* renderer);

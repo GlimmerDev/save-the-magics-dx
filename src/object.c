@@ -31,7 +31,8 @@ const char* SOUND_FILENAMES[NUM_SOUNDS] = {
     "ending_explode_soft.ogg",  // END_EXPLODE_SND
     "ending_shoot_soft.ogg",    // END_SHOOT_SND
     "engage_evil.ogg",          // ENGAGE_EVIL_SND
-    "evil_ship.ogg"             // EVIL_SHIP_SND
+    "evil_ship.ogg",            // EVIL_SHIP_SND
+	"compendium.ogg"			// COMPENDIUM_SND
 };
 
 CompendiumEntry* init_compendium() {
@@ -39,13 +40,14 @@ CompendiumEntry* init_compendium() {
 	CompendiumEntry* compendium = (CompendiumEntry*)calloc(NUM_COMPENDIUM_ENTRIES, sizeof(CompendiumEntry));
 	for (int i = 0; i < NUM_COMPENDIUM_ENTRIES; ++i) {
 		data_index = i*NUM_COMPENDIUM_FIELDS;
-		// NAME;TITLE;AGE;PRONOUNS;BIO
+		// NAME;TITLE;AGE;PRONOUNS;COLOR;BIO
 		// 0   ;  1;   2;  3;      4
 		compendium[i].name = COMPENDIUM_DATA[data_index];
 		compendium[i].title = COMPENDIUM_DATA[data_index+1];
 		compendium[i].age = COMPENDIUM_DATA[data_index+2];
 		compendium[i].pronouns = COMPENDIUM_DATA[data_index+3];
-		compendium[i].bio = COMPENDIUM_DATA[data_index+4];
+		compendium[i].color = atoi(COMPENDIUM_DATA[data_index+4]);
+		compendium[i].bio = COMPENDIUM_DATA[data_index+5];
 		// compendium[i].color =
 		// compendium[i].text_color =
 	}
@@ -170,10 +172,10 @@ Button* init_buttons(const double fps, GameState* state) {
 		MENU_BUTTON_SND,                    // New game 
 		MENU_BUTTON_SND,                    // Load game
 		MENU_BUTTON_SND,					// Options
-		MENU_BUTTON_SND,					// Compendium
+		COMPENDIUM_SND,						// Compendium
 		MENU_BUTTON_SND,					// Compendium - Left
 		MENU_BUTTON_SND,					// Compendium - Right
-		MENU_BUTTON_SND,					// Compendium - Exit
+		ENGAGE_EVIL_SND,					// Compendium - Exit
 		MENU_BUTTON_SND,                    // Save yes
 		MENU_BUTTON_SND,                    // Save no
 		MENU_BUTTON_SND,                    // Save cancel
@@ -352,6 +354,7 @@ GameState* init_state(const double fps) {
 		return NULL;
 	}
 	
+	new_state->current_screen = SCREEN_TITLE;
 	new_state->upgrade_max = 50;
 	new_state->princess_max = 20;
 	new_state->magic_per_click = 1;

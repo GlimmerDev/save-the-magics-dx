@@ -13,6 +13,7 @@ FC_Font** FONTS;
 const char* FONT_FILENAMES[NUM_FONTS] = {
 	"RPGSystem.ttf"
 };
+FC_Effect* DRAW_TEXT_EFFECTS;
 
 extern const int AUTOSAVE_INTERVALS[];
 
@@ -196,6 +197,13 @@ void SDL_RenderFillTriangle(SDL_Renderer* renderer, const E_ColorIndex color, in
 // *** DRAW-RELATED INIT FUNCTIONS ***
 
 int init_fonts(SDL_Renderer* renderer) {
+	DRAW_TEXT_EFFECTS = (FC_Effect*)safe_calloc(1, sizeof(FC_Effect));
+	if (!DRAW_TEXT_EFFECTS) {
+		LOG_E("Error allocating global draw text effect struct\n");
+		return -1;
+	}
+	DRAW_TEXT_EFFECTS->scale = FC_MakeScale(1.0f, 1.0f);
+
 	FC_Font** fonts = (FC_Font**)safe_calloc(NUM_PER_FONT * NUM_FONTS + 1, sizeof(FC_Font*));
 	if (!fonts) return -1;
 
@@ -229,6 +237,9 @@ int init_fonts(SDL_Renderer* renderer) {
 }
 
 void magics_font_cleanup() {
+	if (DRAW_TEXT_EFFECTS) {
+		free (DRAW_TEXT_EFFECTS);
+	}
 	for (int i = 0; i < NUM_PER_FONT * NUM_FONTS; ++i) {
 		FC_FreeFont(FONTS[i]);
 	}
@@ -306,8 +317,9 @@ void init_bg_shapes() {
 	BG_SHAPES[10] = (Shape){SHAPE_TYPE_HILL, PLANET2, 0, 0, screen_ratio()*113, 0, NULL}; 						                // BG_MEDI_HILL2
 	BG_SHAPES[11] = (Shape){SHAPE_TYPE_HILL, PLANET1, 0, 0, screen_ratio()*75, 0, NULL}; 							            // BG_MEDI_HILL3
 	BG_SHAPES[12] = (Shape){SHAPE_TYPE_RECT, TRANS_WHITE, screen_center_x()-393, 316, 784, 233, NULL}; 			            	// BG_MENU_RECT
-	BG_SHAPES[13] = (Shape){SHAPE_TYPE_RECT, TRANS_WHITE, screen_center_x()-380, 70, 520, 380, NULL};							// BG_COMP_BIO
-	BG_SHAPES[14] = (Shape){SHAPE_TYPE_RECT, TRANS_WHITE, screen_center_x()+160, 70, 220, 380, NULL};							// BG_COMP_ART
+	BG_SHAPES[13] = (Shape){SHAPE_TYPE_RECT, TRANS_WHITE, screen_center_x()-380, 70, 520, 380, NULL};							// BG_COMP_OUTER
+	BG_SHAPES[14] = (Shape){SHAPE_TYPE_RECT, LOCKED, screen_center_x()+164, 74, 212, 372, NULL};								// BG_COMP_INNER
+	BG_SHAPES[15] = (Shape){SHAPE_TYPE_RECT, TRANS_WHITE, screen_center_x()+160, 70, 220, 380, NULL};							// BG_COMP_ART
 }
 
 void init_end_ship_shapes() {
@@ -557,14 +569,13 @@ int set_draw_color(SDL_Renderer* renderer, const E_ColorIndex color) {
 }
 
 void _draw_text(const char* text, const int x, const int y, const int font,
-				const int size, const E_ColorIndex color, SDL_Renderer* renderer, const FC_AlignEnum align) {
-	static FC_Effect e;
-    e.alignment = align;
-    e.scale = FC_MakeScale(1.0f,1.0f);
-    e.color = COL[color];
-	
+				const int size, const E_ColorIndex color, SDL_Renderer* renderer,
+				const FC_AlignEnum align) {
+    DRAW_TEXT_EFFECTS->alignment = align;
+    DRAW_TEXT_EFFECTS->color = COL[color];
+
 	const int offset = (font*NUM_PER_FONT) + (size-MIN_FONT_SIZE)/2;
-	FC_DrawEffect(FONTS[offset], renderer, x, y, e, text);
+	FC_DrawEffect(FONTS[offset], renderer, x, y, *DRAW_TEXT_EFFECTS, text);
 }
 
 void draw_text_left(const char* text, const int x, const int y, const int font,
@@ -584,7 +595,6 @@ void draw_text_multi(const char* text, const int x, const int y, const int font_
 
 	const int f_offset = (font_i*NUM_PER_FONT) + (size-MIN_FONT_SIZE)/2;
 	FC_Font* font = FONTS[f_offset];
-
 	// Get the wrapped text
 	FC_GetWrappedText(font, wrapped_text, max_result_size, wrap_width, "%s", text);
 
@@ -594,7 +604,7 @@ void draw_text_multi(const char* text, const int x, const int y, const int font_
 	int current_y = y;
 
 	while (line) {
-		FC_Draw(font, renderer, x, current_y, line);
+		_draw_text(line, x, current_y, font_i, size, color, renderer, FC_ALIGN_LEFT);
 		current_y += line_spacing;
 		line = strtok(NULL, "\n");
 	}
@@ -843,9 +853,14 @@ void draw_compendium_entry(Config* config, const CompendiumEntry* const entry) {
 
 	// background boxes
 	SDL_SetRenderDrawBlendMode(config->renderer, SDL_BLENDMODE_BLEND);
-	draw_shape(config->renderer, &BG_SHAPES[BG_COMP_BIO]);
+	draw_shape(config->renderer, &BG_SHAPES[BG_COMP_OUTER]);
 	draw_shape(config->renderer, &BG_SHAPES[BG_COMP_ART]);
 	SDL_SetRenderDrawBlendMode(config->renderer, SDL_BLENDMODE_NONE);
+
+	// inner box with color
+	Shape* box = &BG_SHAPES[BG_COMP_INNER];
+	box->color = entry->color;
+	draw_shape(config->renderer, box);
 
 	for (int i = 0; i < NUM_COMPENDIUM_FIELDS; ++i) {
 		draw_text_left(headers[i], x, y+i*sp, FONT_RPG, 18, WHITE, config->renderer);
@@ -859,7 +874,7 @@ void draw_compendium_entry(Config* config, const CompendiumEntry* const entry) {
 	draw_text_multi(entry->bio, 	x+10, y+20+4*sp, FONT_RPG, 20, WHITE, config->renderer, 480);
 
 	// art
-	draw_text_multi("Art coming soon!!", x+590, 200, FONT_RPG, 30, WHITE, config->renderer, 100);
+	draw_text_multi("Art coming soon!!", x+590, 200, FONT_RPG, 30, entry->color+1, config->renderer, 100);
 }
 
 void draw_screen_compendium(Config* config, unsigned int* page) {

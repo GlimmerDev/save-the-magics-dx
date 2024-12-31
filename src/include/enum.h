@@ -36,7 +36,7 @@
 // APP INFO
 #define MAGICS_ORG_STR "GlimmerDev"
 #define MAGICS_APP_STR "SaveTheMagicsDX"
-#define VERSION_NUMBER "2.0-b1"
+#define VERSION_NUMBER "2.0-b2"
 #define SAVE_VERSION   200
 
 // SCREEN DIMENSIONS
@@ -73,29 +73,29 @@ typedef enum {
     EXPL4,
     SHIP_COL,
     SHIP_GLOW,
-    B_PURPLE,
+    B_PURPLE, 			//16
     B_PURPLE_S,
-    B_LIGHTPURPLE,
+    B_LIGHTPURPLE,		//18
     B_LIGHTPURPLE_S,
-    B_DARKPURPLE,
+    B_DARKPURPLE,		//20
     B_DARKPURPLE_S,
-    B_BLUE,
+    B_BLUE,				//22
     B_BLUE_S,
-    B_LIGHTBLUE,
+    B_LIGHTBLUE,		//24
     B_LIGHTBLUE_S,
-    B_GREEN,
+    B_GREEN,			//26
     B_GREEN_S,
-    B_RED,
+    B_RED,				//28
     B_RED_S,
-    B_ORANGE,
+    B_ORANGE,			//30
     B_ORANGE_S,
-    B_DARK,
+    B_DARK,				//32
     B_DARK_S,
-    B_DARKGREEN,
+    B_DARKGREEN,		//34
     B_DARKGREEN_S,
-	B_PINK,
+	B_PINK,				//36
 	B_PINK_S,
-    B_MENU,
+    B_MENU,				//38
     B_MENU_S,
 	B_SAVE_CLEAR,
 	B_SAVE_CLEAR_S,
@@ -117,7 +117,7 @@ typedef enum {
 #define B_DARKRED_S  B_DARK_S
 
 // SOUNDS
-#define NUM_SOUNDS 10
+#define NUM_SOUNDS 11
 typedef enum {
 	UPGRADE_SND,
 	MENU_BUTTON_SND,
@@ -128,7 +128,8 @@ typedef enum {
 	END_EXPLODE_SND,
 	END_SHOOT_SND,
 	ENGAGE_EVIL_SND,
-	EVIL_SHIP_SND
+	EVIL_SHIP_SND,
+	COMPENDIUM_SND
 } E_SoundIndex;
 
 // BUTTONS
@@ -201,10 +202,10 @@ typedef enum {
 
 // COMPENDIUM
 # define NUM_COMPENDIUM_ENTRIES 12
-# define NUM_COMPENDIUM_FIELDS 5
+# define NUM_COMPENDIUM_FIELDS 6
 
 // SHAPES
-#define NUM_BG_SHAPES 15
+#define NUM_BG_SHAPES 16
 #define NUM_STARS 200
 
 // ENUMS
@@ -240,7 +241,8 @@ typedef enum {
 	BG_MEDI_HILL2,
 	BG_MEDI_HILL3,
 	BG_MENU_RECT,
-	BG_COMP_BIO,
+	BG_COMP_OUTER,
+	BG_COMP_INNER,
 	BG_COMP_ART
 } E_BGShapes;
 
@@ -262,9 +264,9 @@ typedef enum {
 
 // SCREENS (GAMESTATES)
 typedef enum {
-	SCREEN_TITLE,
 	SCREEN_OPTIONS,
 	SCREEN_COMPENDIUM,
+	SCREEN_TITLE,
 	SCREEN_SAVE,
 	SCREEN_GAME_LOOP,
 	SCREEN_ENDING,

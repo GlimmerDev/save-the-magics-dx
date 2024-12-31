@@ -310,7 +310,7 @@ void check_done_buttons(Config* const config, unsigned int* const upgrade_page, 
 			}
 			bptr = get_button(QUIT_B);
 			if ( done_button(bptr) ) {
-				event_confirm_quit(config);
+				handle_quit(config, running);
 			}
 			break;
 		case SCREEN_ENDING:
@@ -534,7 +534,6 @@ void handle_click_save(const SDL_Point* const mouse_pos, Config* const config) {
 void event_confirm_quit(Config* const config) {
 	config->state->current_screen = SCREEN_SAVE;
 	config->state->current_menu = MENU_SV_CNF_QUIT;
-	Mix_PlayChannel(-1, config->sounds[MENU_BUTTON_SND], 0);
 }
 
 void handle_click_mute_quit(const SDL_Point* mouse_pos, Config* const config) {
@@ -642,6 +641,27 @@ void handle_click_ending(const SDL_Point* mouse_pos, Config* const config) {
 	} 
 }
 
+void handle_quit(Config* const config, bool* const running) {
+	Mix_PlayChannel(-1, config->sounds[ENGAGE_EVIL_SND], 0);
+	if (config->state->current_screen < SCREEN_TITLE) {
+		config->state->current_screen = SCREEN_TITLE;
+		return;
+	}
+	else if (config->state->current_screen == SCREEN_TITLE) {
+		*running = false;
+		return;
+	}
+	else if (config->state->current_screen == SCREEN_SAVE) {
+		if (config->state->current_menu == MENU_LD_SLOT) {
+			config->state->current_screen = SCREEN_TITLE;
+			return;
+		}
+		*running = false;
+		return;
+	}
+	event_confirm_quit(config);
+}
+
 void handle_event_sdl(const SDL_Event event, SDL_Point* const mouse_pos, Config* const config,
 						bool* const running, unsigned int* const upgrade_page, unsigned int* const princess_page){	
 	Button* bptr = NULL;
@@ -649,11 +669,7 @@ void handle_event_sdl(const SDL_Event event, SDL_Point* const mouse_pos, Config*
 	switch(event.type) {
 		
 		case SDL_QUIT:
-			if (config->state->current_screen <= SCREEN_SAVE) {
-				*running = false;
-				return;
-			}
-			event_confirm_quit(config);
+			handle_quit(config, running);
 			break;
 			
 		case SDL_KEYDOWN:
@@ -662,11 +678,8 @@ void handle_event_sdl(const SDL_Event event, SDL_Point* const mouse_pos, Config*
 				break;
 			}
 			if (event.key.keysym.sym == SDLK_ESCAPE) {
-				if (config->state->current_screen <= SCREEN_SAVE) {
-					*running = false;
-					return;
-				}
-				event_confirm_quit(config);
+				handle_quit(config, running);
+				break;
 			} 
 			#ifdef DEBUG
 			else if (event.key.keysym.sym == SDLK_p) {

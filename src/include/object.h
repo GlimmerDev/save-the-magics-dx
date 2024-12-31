@@ -30,6 +30,7 @@ typedef struct CompendiumEntry {
 	const char* title;
 	const char* age;
 	const char* pronouns;
+	E_ColorIndex color;
 	const char* bio;
 } CompendiumEntry;
 

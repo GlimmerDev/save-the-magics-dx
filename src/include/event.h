@@ -53,6 +53,8 @@ void handle_click_ending(const SDL_Point* mouse_pos, Config* const config);
 
 void event_confirm_quit(Config* const config);
 
+void handle_quit(Config* const config, bool* const running);
+
 void handle_event_sdl(const SDL_Event event, SDL_Point* const mouse_pos, Config* const config, 
 						bool* const running, unsigned int* const upgrade_page, unsigned int* const princess_page);
 
