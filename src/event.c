@@ -113,6 +113,17 @@ void update_autosave_timer(Config* const config, unsigned int* const autosave_ti
 	}
 }
 
+void update_force_quit_timer(Config* const config, unsigned int* const force_quit_timer) {
+	if (config->state->force_quit_count) {
+		++(*force_quit_timer);
+		if (*force_quit_timer > get_fps()) {
+			config->state->force_quit_count = 0;
+			*force_quit_timer = 0;
+			LOG_D("Reset force_quit_count\n");
+		}
+	}
+}
+
 bool clicked_button(const Button* const bptr, const SDL_Point* const pos) {
 	if (bptr->state == STATE_BTN_CLICKED) {
 		return false;
@@ -213,6 +224,7 @@ void check_done_buttons(Config* const config, unsigned int* const upgrade_page, 
 			}
 			bptr = get_button(OPT_POSTSAVE_B);
 			if (done_button(bptr)) {
+				config->reload_state = RELOAD_STATE_WRITECFG;
 				config->quitonsave = !(config->quitonsave);
 			}
 			break;
@@ -643,21 +655,30 @@ void handle_click_ending(const SDL_Point* mouse_pos, Config* const config) {
 
 void handle_quit(Config* const config, bool* const running) {
 	Mix_PlayChannel(-1, config->sounds[ENGAGE_EVIL_SND], 0);
-	if (config->state->current_screen < SCREEN_TITLE) {
-		config->state->current_screen = SCREEN_TITLE;
-		return;
-	}
-	else if (config->state->current_screen == SCREEN_TITLE) {
+
+	// force quit by hitting esc/exit 3 times
+	++config->state->force_quit_count;
+	if (config->state->force_quit_count > 2) {
 		*running = false;
-		return;
 	}
-	else if (config->state->current_screen == SCREEN_SAVE) {
-		if (config->state->current_menu == MENU_LD_SLOT) {
+
+	switch(config->state->current_screen) {
+		case SCREEN_COMPENDIUM:
+		case SCREEN_OPTIONS:
 			config->state->current_screen = SCREEN_TITLE;
 			return;
-		}
-		*running = false;
-		return;
+		case SCREEN_TITLE:
+			*running = false;
+			return;
+		case SCREEN_SAVE:
+			if (config->state->current_menu == MENU_LD_SLOT) {
+				config->state->current_screen = SCREEN_TITLE;
+				return;
+			}
+			*running = false;
+			return;
+		case SCREEN_ENDING:
+			return;
 	}
 	event_confirm_quit(config);
 }

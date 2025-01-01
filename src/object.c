@@ -424,6 +424,8 @@ EndState* init_end_state(const double fps, GameState* state, SDL_Renderer* rende
 	e->explosion_radius = 2.0f;
 	e->explosion_alpha = 255.0f;
 	e->ship_glow_alpha = 150.0f;
+	e->eye_blink = fps/30-1;
+	e->eye_blink_rate = floor(fps/7.5);
 	e->expl_tx1 = expl_tx1;
 	e->expl_tx2 = expl_tx2;
 	

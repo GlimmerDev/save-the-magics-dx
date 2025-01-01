@@ -250,7 +250,11 @@ int save_game(Config* config, const unsigned short slot) {
 		LOG_E("Error creating save_data object for save\n");
 		return -1;
 	}
-	
+	//char* json_s = json_dumps(save_data, JSON_COMPACT);
+	//printf(json_s);
+	//printf("\n");
+	//free(json_s);
+
 	if (write_json_file(save_data, config->saves[slot].path) < 0) {
 		LOG_E("Error writing save file: %s\n", config->saves[slot].path);
 		json_decref(save_data);
@@ -272,8 +276,9 @@ int load_save_json_upgrades(json_t* save_data, Config* config, const bool is_cla
 	json_t* j_upgrades = json_object_get(save_data, "upgrades");
 	json_t* j_upgrade_counts = json_object_get(j_upgrades, "counts");
 	
+
 	if (is_classic) {
-		// compensate for less princesses
+		// compensate for less princesses/upgrades in classic
 		for (int i = 50; i < 55; ++i) {
 			json_array_insert_new(j_upgrade_counts, i, json_integer(0));
 		}
@@ -285,12 +290,13 @@ int load_save_json_upgrades(json_t* save_data, Config* config, const bool is_cla
 	}
 	
 	// load upgrade levels
+
 	for (int i = 0; i < INCANTATION_OFFSET; ++i) {
 		upgrades[i].count = json_integer_value(json_array_get(j_upgrade_counts, i));
 		// reset & recalculate upgrade cost
 		upgrades[i].cost = atoll(UPGRADE_DATA[i*NUM_UPGRADE_FIELDS+4]);
 		for (int j = 0; j < upgrades[i].count; ++j) {
-			upgrades[i].cost = round(upgrades[i].cost*1.18f);
+			upgrades[i].cost = round(upgrades[i].cost*1.18);
 		}
 	} for (int i = INCANTATION_OFFSET; i < UPGRADES_END_OFFSET; ++i) {
 		upgrades[i].cooldown = json_integer_value(json_array_get(j_upgrade_counts, i))*get_fps();
@@ -298,6 +304,12 @@ int load_save_json_upgrades(json_t* save_data, Config* config, const bool is_cla
 	
 	// unlock upgrades/princesses
 	unsigned int upgrade_unlocked = json_integer_value(json_object_get(j_upgrades, "upgrade_unlocked"));
+
+	// since there are less upgrades in classic, buying the last upgrade does not increase upgrade_unlocked
+	// check if this is the case, and if so, increase it
+	if (is_classic && upgrade_unlocked == 50) {
+		++upgrade_unlocked;
+	}
 	unsigned int princess_unlocked = json_integer_value(json_object_get(j_upgrades, "princess_unlocked"));
 	for (int i = 0; i < PRINCESS_OFFSET; ++i) {
 		upgrades[i].button->locked = (i >= upgrade_unlocked);
@@ -353,6 +365,7 @@ void load_save_json_buttons(json_t* save_data, Config* config) {
 json_t* load_save_json(const char* path) {	
 	json_error_t error;
 	json_t* save_data = load_json_file(path, &error);
+	//print_json(save_data);
 	json_incref(save_data);
 	if (!save_data) {
 		LOG_E("Error creating save_data object for load\n");
@@ -487,17 +500,7 @@ void load_save(Config* config, const unsigned short slot) {
 	load_save_json_state(save_data, config);
 	
 	long last_saved = json_integer_value(json_object_get(save_data, "last_saved"));
-	#ifndef DEBUG
-	// Enforce magic missile check for non-classic saves
-	if (save_version >= 200) {
-		unsigned int magic_missile = json_integer_value(json_object_get(save_data, "magic_missile"));
-		if (magic_missile != calc_magic_missile(last_saved, config)) {
-			LOG_E("Error: magic missile!\n");
-			json_decref(save_data);
-			exit(ERR_MAGIC_MISSILE);
-		}
-	}
-	#endif
+	// TODO: enforce magic missile check
 	json_decref(save_data);
 }
 
@@ -527,11 +530,12 @@ bool any_save_exists(Config* config) {
 
 int calc_magic_missile(const long timestamp, const Config* const config) {
 	long r = 0;
+	long secret = 69420;
 	for (int i = 0; i < UPGRADES_END_OFFSET; ++i) {
 		r += config->upgrades[i].count;
 	}
-	r ^= ((long)config->state->magic_count + (long)config->state->magic_per_second + timestamp);
-	return (int)(r % 69420);
+	r ^= secret;
+	return (int)r;
 }
 
 Config* load_config_from_file() {

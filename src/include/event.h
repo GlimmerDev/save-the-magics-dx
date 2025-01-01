@@ -17,6 +17,8 @@ void update_autosave_timer(Config* const config, unsigned int* const autosave_ti
 
 void update_ending_timers(Config* const config);
 
+void update_force_quit_timer(Config* const config, unsigned int* const force_quit_timer);
+
 bool clicked_button(const Button* const bptr, const SDL_Point* const pos);
 
 bool clicked_upgrade(const Upgrade* const upgrade, const SDL_Point* const pos);

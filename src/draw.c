@@ -327,8 +327,8 @@ void init_end_ship_shapes() {
     END_SHIP_SHAPES[1] = (Shape){SHAPE_TYPE_RECT, SHIP_COL, screen_center_x()-250, screen_center_y()-10, 500, 20, NULL}; 
     END_SHIP_SHAPES[2] = (Shape){SHAPE_TYPE_RECT, SHIP_COL, screen_center_x()-50, screen_center_y()-50, 100, 100, NULL};
     END_SHIP_SHAPES[3] = (Shape){SHAPE_TYPE_RECT, SHIP_COL, screen_center_x()-10, screen_center_y()-130, 20, 200, NULL};
-	END_SHIP_SHAPES[4] = (Shape){SHAPE_TYPE_RECT, SHIP_COL, screen_center_x()-30, screen_center_y()-5, 20, 10, NULL};    // END_SHIP_EYEL
-	END_SHIP_SHAPES[5] = (Shape){SHAPE_TYPE_RECT, SHIP_COL, screen_center_x()+10, screen_center_y()-5, 20, 10, NULL};    // END_SHIP_EYER
+	END_SHIP_SHAPES[4] = (Shape){SHAPE_TYPE_RECT, B_RED_S, screen_center_x()-30, screen_center_y()-5, 20, 10, NULL};    	// END_SHIP_EYEL
+	END_SHIP_SHAPES[5] = (Shape){SHAPE_TYPE_RECT, B_RED_S, screen_center_x()+10, screen_center_y()-5, 20, 10, NULL};    	// END_SHIP_EYER
 }
 
 void init_shapes(Config* const config) {
@@ -814,9 +814,13 @@ void draw_screen_ending(SDL_Renderer* renderer, Config* config) {
 				SDL_SetRenderTarget(renderer, NULL);
 				SDL_RenderCopy(renderer, ending->expl_tx1, NULL, NULL);
 
-				for (int i = 0; i < 6; ++i) {
+				for (int i = 0; i < 4; ++i) {
 					Shape* s = &(END_SHIP_SHAPES[i]);
 					draw_shape(renderer, s);
+				}
+				if ((ending->explosion_delay % ending->eye_blink_rate) > ending->eye_blink) {
+					draw_shape(renderer, &END_SHIP_SHAPES[4]);
+					draw_shape(renderer, &END_SHIP_SHAPES[5]);
 				}
 			}
 			break;

@@ -202,6 +202,7 @@ int SDL_main(int argc, char *argv[]) {
 	unsigned int upgrade_page = 0;
 	unsigned int princess_page = 0;
 	unsigned int autosave_timer = 0;
+	unsigned int force_quit_timer = 0;
 	unsigned int save_slot = 0;
 	
 	Button* bptr = NULL;
@@ -246,6 +247,7 @@ int SDL_main(int argc, char *argv[]) {
 			// update timers
 			update_button_timers(config->buttons, config->upgrades, config->state);
 			update_ending_timers(config);
+			update_force_quit_timer(config, &force_quit_timer);
 			if (config->state->current_screen == SCREEN_GAME_LOOP) {
 				// if incantations unlocked, update their timers
 				// per classic behavior, this applies even when meditating
@@ -304,8 +306,10 @@ int SDL_main(int argc, char *argv[]) {
 			draw_background(config);
 			
 			// Draw FPS and version info
-			draw_text(version_string, config->screen_width-140, config->screen_height-24, FONT_RPG, 20, WHITE, config->renderer);
 			draw_text(fps_buf, 18, 2, FONT_RPG, 18, PLANET3, config->renderer);
+			if (config->state->current_screen != SCREEN_ENDING) {
+				draw_text(version_string, config->screen_width-140, config->screen_height-24, FONT_RPG, 20, WHITE, config->renderer);
+			}
 			
 			switch(config->state->current_screen) {
 				case SCREEN_TITLE:

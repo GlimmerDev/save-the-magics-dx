@@ -78,6 +78,8 @@ typedef struct GameState {
 	bool is_meditating;
 	bool is_muted;
 
+	unsigned int force_quit_count;
+
 	unsigned short current_screen;
 	unsigned short current_menu;
 
@@ -101,6 +103,8 @@ typedef struct EndState {
 	float explosion_radius;
 	float explosion_alpha;
 	float ship_glow_alpha;
+	int eye_blink;
+	int eye_blink_rate;
 	SDL_Texture* expl_tx1;
 	SDL_Texture* expl_tx2;
 } EndState;
